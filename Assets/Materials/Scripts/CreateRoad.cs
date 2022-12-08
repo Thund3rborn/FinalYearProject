@@ -9,6 +9,7 @@ public class CreateRoad : MonoBehaviour
 {
     [SerializeField] private Camera mainCamera;
     [SerializeField] private LayerMask layerMask;
+    [SerializeField] private Button button;
 
     // Start is called before the first frame update
     void Start()
