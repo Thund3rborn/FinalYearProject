@@ -5,7 +5,9 @@ using UnityEngine;
 public class CameraMovement : MonoBehaviour
 {
     [SerializeField] private Camera mainCamera;
+    [SerializeField] private Transform theCamera;
     [SerializeField] private float cameraVelocity;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -15,7 +17,7 @@ public class CameraMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(Input.GetKey(KeyCode.W))
+        if (Input.GetKey(KeyCode.W))
         {
             mainCamera.transform.position += new Vector3(0, 0, cameraVelocity) * Time.deltaTime;
         }
@@ -31,5 +33,7 @@ public class CameraMovement : MonoBehaviour
         {
             mainCamera.transform.position += new Vector3(cameraVelocity, 0, 0) * Time.deltaTime;
         }
+
+
     }
 }

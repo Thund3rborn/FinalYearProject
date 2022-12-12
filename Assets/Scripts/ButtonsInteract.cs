@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 public class ButtonsInteract : MonoBehaviour
 {
-    [SerializeField] private Button btn = null;
+    //[SerializeField] private Button btn = null;
 
     //private void Awake()
     //{
