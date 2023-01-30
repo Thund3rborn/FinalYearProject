@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using Unity.VisualScripting;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
@@ -8,13 +7,13 @@ using UnityEngine.UIElements;
 
 public class CreateRoad : MonoBehaviour
 {
-    public MousePos mousePos;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private Button button;
     private Vector3 firstPos, secondPos;
-    public Vector3[] v_line_pos;
-    public LineRenderer[] g_lines;
+    GameObject firstCoordinate;
+    GameObject secondCoordinate;
+    GameObject[] lines;
 
     //private Material roadMaterial;
     private float clickCount;
@@ -23,14 +22,13 @@ public class CreateRoad : MonoBehaviour
     void Start()
     {
         clickCount= 0;
+        //roadMaterial = GetComponent<Renderer>().material;
     }
 
     // Update is called once per frame
     void Update()
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-
         if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask) && clickCount == 0)
         {
             firstPos = raycastHit.point;
@@ -58,4 +56,44 @@ public class CreateRoad : MonoBehaviour
 
         }
     }
+
+    //private void OnMouseDown()
+    //{
+    //    Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+    //    //Create first road position point
+    //    if (Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask) && clickCount == 0)
+    //    {
+            
+    //        GameObject firstPoint = GameObject.CreatePrimitive(PrimitiveType.Cube);
+    //        firstPoint.GetComponent<Transform>().localScale = new Vector3(2.0f, 0.1f, 2.0f);
+    //        firstPoint.transform.position = raycastHit.point;
+    //        firstPoint.GetComponent<Renderer>().material.color = Color.cyan;
+
+    //        clickCount = clickCount + 1;
+
+    //        GameObject theRoad = GameObject.CreatePrimitive(PrimitiveType.Cube);
+    //        theRoad.GetComponent<Transform>().localScale = new Vector3(2.0f, 0.1f, 2.0f);
+    //        theRoad.transform.position = raycastHit.point;
+    //        theRoad.GetComponent<Renderer>().material.color = Color.gray;
+
+
+    //    }
+        ////Create the road starting at the first position point and this final point
+        //if (Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask) && clickCount >= 0)
+        //{
+        //    GameObject theRoad = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //    theRoad.GetComponent<Transform>().localScale = new Vector3(2.0f, 0.1f, 2.0f);
+        //    theRoad.transform.position = raycastHit.point;
+        //    theRoad.GetComponent<Renderer>().material.color = Color.gray;
+
+
+        //    clickCount = 0;
+        //}
+
+        //GameObject road = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        //road.GetComponent<Transform>().localScale = new Vector3(2.0f, 0.1f, 2.0f);
+        //road.transform.position = new Vector3(0,0,0);
+
+    //}
+
 }
