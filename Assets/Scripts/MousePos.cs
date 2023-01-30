@@ -21,4 +21,16 @@ public class MousePos : MonoBehaviour
             
         }
     }
+
+    public Vector3 GetMousePosition()
+    {
+        if (cursorPos == null)
+        {
+            return cursorPos;
+        }
+        else
+        {
+            return cursorPos;
+        }
+    }
 }
