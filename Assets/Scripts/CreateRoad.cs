@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Net;
 using Unity.VisualScripting;
+using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -14,6 +15,8 @@ public class CreateRoad : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private Button button;
+
+    private bool preview = false;
 
     private Vector3 startPoint, endPoint;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
@@ -41,8 +44,12 @@ public class CreateRoad : MonoBehaviour
         {
             Debug.Log("firstPos");
             startPoint = raycastHit.point;
+            endPoint = startPoint;
+
+            CreateStraightLine();
+            preview = true;
         }
-        else if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+        else if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask) && preview)
         {
             List<Vector3> positionsList = new List<Vector3>();
 
@@ -52,7 +59,7 @@ public class CreateRoad : MonoBehaviour
             positionsList.Add(startPoint);
             listOfPositionLists.Add(positionsList);
 
-            CreateStraighLine();
+            //CreateStraightLine();
             //DrawRoad();
 
 
@@ -64,10 +71,20 @@ public class CreateRoad : MonoBehaviour
 
             startPoint = Vector3.zero;
             endPoint = Vector3.zero;
+
+            preview = false;
+        }
+        else if (Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask) && preview)
+        {
+            GameObject.Destroy(GameObject.Find("Line " + listOfPositionLists.Count));
+
+            endPoint = raycastHit.point;
+
+            CreateStraightLine();
         }
     }
     
-    private void CreateStraighLine()
+    private void CreateStraightLine()
     {
         LineRenderer theLine = new GameObject("Line " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
         theLine.startColor = Color.white;
