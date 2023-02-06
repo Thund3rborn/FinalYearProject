@@ -52,7 +52,8 @@ public class CreateRoad : MonoBehaviour
             positionsList.Add(startPoint);
             listOfPositionLists.Add(positionsList);
 
-            CreateStraightRoad();
+            CreateStraighLine();
+            //DrawRoad();
 
 
             for (int i = 0; i < listOfPositionLists.Count; i++)
@@ -66,9 +67,9 @@ public class CreateRoad : MonoBehaviour
         }
     }
     
-    private void CreateStraightRoad()
+    private void CreateStraighLine()
     {
-        LineRenderer theLine = new GameObject("Line").AddComponent<LineRenderer>();
+        LineRenderer theLine = new GameObject("Line " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
         theLine.startColor = Color.white;
         theLine.endColor = Color.black;
         theLine.startWidth = 0.1f;
@@ -78,5 +79,30 @@ public class CreateRoad : MonoBehaviour
 
         theLine.SetPosition(0, startPoint);
         theLine.SetPosition(1, endPoint);
+    }
+
+    private void DrawRoad()
+    {
+        for(int verts = 0; verts < 1/*listOfPositionLists.Count*/; verts++) 
+        {
+            //LineRenderer theLine = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+            //theLine.startColor = Color.white;
+            //theLine.endColor = Color.black;
+            //theLine.startWidth = 0.8f;
+            //theLine.endWidth = 0.8f;
+            //theLine.positionCount = 2;
+            //theLine.useWorldSpace = true;
+
+            MeshRenderer theRoad = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<MeshRenderer>();
+
+            
+
+            //List<Vector3> list = listOfPositionLists[verts];
+            //for(int i = 0; i < list.Count; i++)
+            //{
+            //    theLine.SetPosition(0, list[0]);
+            //    theLine.SetPosition(1, list[1]);
+            //}
+        }
     }
 }
