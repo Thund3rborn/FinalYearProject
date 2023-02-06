@@ -17,6 +17,7 @@ public class CreateRoad : MonoBehaviour
     [SerializeField] private Button button;
 
     private bool preview = false;
+    private bool creatingRoad = false;
 
     private Vector3 startPoint, endPoint;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
@@ -40,13 +41,14 @@ public class CreateRoad : MonoBehaviour
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask) && startPoint == Vector3.zero)
+        if (Input.GetMouseButtonDown(0) && !creatingRoad && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask) && startPoint == Vector3.zero)
         {
             Debug.Log("firstPos");
             startPoint = raycastHit.point;
-            endPoint = startPoint;
+            endPoint = startPoint;              //temporary location 
 
             CreateStraightLine();
+            creatingRoad= true;
             preview = true;
         }
         else if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask) && preview)
@@ -70,10 +72,24 @@ public class CreateRoad : MonoBehaviour
             }
 
             startPoint = Vector3.zero;
-            endPoint = Vector3.zero;
 
-            preview = false;
+            startPoint = endPoint;
+            endPoint = raycastHit.point;              //temporary location 
+
+            CreateStraightLine();
         }
+        else if(Input.GetMouseButtonDown(1) && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+        {
+            GameObject.Destroy(GameObject.Find("Line " + listOfPositionLists.Count));
+
+            creatingRoad = false;
+            preview = false;
+
+            startPoint = Vector3.zero;
+            endPoint = Vector3.zero;
+        }
+
+        //preview update
         else if (Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask) && preview)
         {
             GameObject.Destroy(GameObject.Find("Line " + listOfPositionLists.Count));
