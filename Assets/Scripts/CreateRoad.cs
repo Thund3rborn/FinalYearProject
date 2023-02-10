@@ -21,6 +21,8 @@ public class CreateRoad : MonoBehaviour
     //private bool preview = false;
     private bool creatingRoad = false;
 
+    private bool curvedBuildingMode, straightBuildingMode = false;
+
     private Vector3 startPoint, endPoint;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
 
@@ -34,12 +36,29 @@ public class CreateRoad : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        CreateRoads();
+        if(straightBuildingMode)
+        {
+            StraightRoad();
+        }
+        if (curvedBuildingMode)
+        {
+            CurvedRoad();
+        }
+
+        ProcessInput();
     }
 
+    void CurvedRoad()
+    {
+        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
+        if (Input.GetMouseButtonDown(0))
+        {
 
-    void CreateRoads()
+        }
+    }
+
+    void StraightRoad()
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
@@ -161,5 +180,39 @@ public class CreateRoad : MonoBehaviour
         gameObject.GetComponent<MeshFilter>().mesh = mesh;
         gameObject.GetComponent<MeshRenderer>().material = material;
 
+    }
+
+    private void ProcessInput()
+    {
+        if(Input.GetKeyDown(KeyCode.Alpha1) && !straightBuildingMode && !curvedBuildingMode) 
+        {
+            Debug.Log("STRAIGHTBuildingMode set to ON");
+            straightBuildingMode = true;
+        }
+        else if(Input.GetKeyDown(KeyCode.Alpha1) && straightBuildingMode)
+        {
+            Debug.Log("STRAIGHTBuildingMode set to OFF");
+            straightBuildingMode = false;
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha2) && !curvedBuildingMode && !straightBuildingMode)
+        {
+            Debug.Log("CURVEDBuildingMode set to ON");
+            curvedBuildingMode = true;
+        }
+        else if(Input.GetKeyDown(KeyCode.Alpha2) && curvedBuildingMode)
+        {
+            Debug.Log("CURVEDBuildingMode set to OFF");
+            curvedBuildingMode = false;
+        }
+    }
+
+    private float lerp(float a, float b, float t)
+    {
+        return a + (b - a) * t;
+    }
+
+    private Vector2 linear(Vector2 a, Vector2 b, float t)
+    {
+        return new Vector2(lerp(a.x, b.x, t), lerp(a.y, b.y, t));
     }
 }
