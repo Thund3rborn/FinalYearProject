@@ -110,6 +110,7 @@ public class CreateRoad : MonoBehaviour
     private void CreateStraightLine()
     {
         LineRenderer theLine = new GameObject("Line " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+
         theLine.startColor = Color.white;
         theLine.endColor = Color.black;
         theLine.startWidth = 0.1f;
@@ -130,15 +131,15 @@ public class CreateRoad : MonoBehaviour
         Vector3 direction = (endPoint - startPoint).normalized;
         Vector3 normal = Vector3.Cross(direction, Vector3.up).normalized * roadWidth;
 
-        vertices[0] = startPoint - normal + new Vector3(0, 0.1f, 0);
-        vertices[1] = startPoint + normal + new Vector3(0, 0.1f, 0);
-        vertices[2] = endPoint + normal + new Vector3(0, 0.1f, 0);
-        vertices[3] = endPoint - normal + new Vector3(0, 0.1f, 0);
+        vertices[0] = startPoint - normal + new Vector3(0, 0.05f, 0);
+        vertices[1] = startPoint + normal + new Vector3(0, 0.05f, 0);
+        vertices[2] = endPoint + normal + new Vector3(0, 0.05f, 0);
+        vertices[3] = endPoint - normal + new Vector3(0, 0.05f, 0);
 
-        uv[0] = new Vector2(0f, 0f);
-        uv[1] = new Vector2(0f, 1f);
-        uv[2] = new Vector2(1f, 1f);
-        uv[3] = new Vector2(1f, 0f);
+        uv[3] = new Vector2(0f, 0f);
+        uv[0] = new Vector2(0f, 1f);
+        uv[1] = new Vector2(1f, 1f);
+        uv[2] = new Vector2(1f, 0f);
 
         triangles[0] = 0;
         triangles[1] = 1;
