@@ -6,32 +6,38 @@ public class CameraMovement : MonoBehaviour
 {
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Transform theCamera;
-    [SerializeField] private float cameraVelocity;
+    [SerializeField] private float cameraSpeed;
+    private float cameraVelocityX;
+    private float cameraVelocityY;
 
     // Start is called before the first frame update
     void Start()
     {
-
+        cameraSpeed = 15;
     }
 
     // Update is called once per frame
     void Update()
     {
+        mainCamera.transform.position += new Vector3(0, 0, cameraVelocityX) * Time.deltaTime;
+        mainCamera.transform.position += new Vector3(cameraVelocityY, 0, 0) * Time.deltaTime;
+
+        cameraVelocityX = 0; cameraVelocityY = 0;
         if (Input.GetKey(KeyCode.W))
         {
-            mainCamera.transform.position += new Vector3(0, 0, cameraVelocity) * Time.deltaTime;
+            cameraVelocityX = cameraSpeed;
         }
         if (Input.GetKey(KeyCode.S))
         {
-            mainCamera.transform.position -= new Vector3(0, 0, cameraVelocity) * Time.deltaTime;
+            cameraVelocityX = -cameraSpeed;
         }
         if (Input.GetKey(KeyCode.A))
         {
-            mainCamera.transform.position -= new Vector3(cameraVelocity, 0, 0) * Time.deltaTime;
+            cameraVelocityY = -cameraSpeed;
         }
         if (Input.GetKey(KeyCode.D))
         {
-            mainCamera.transform.position += new Vector3(cameraVelocity, 0, 0) * Time.deltaTime;
+            cameraVelocityY = cameraSpeed;
         }
 
 
