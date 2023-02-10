@@ -1,19 +1,20 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static UnityEditor.PlayerSettings;
 
 public class CameraMovement : MonoBehaviour
 {
+    public float scale = 1f;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Transform theCamera;
-    [SerializeField] private float cameraSpeed;
+    [SerializeField] private float cameraSpeed = 15f;
     private float cameraVelocityX;
     private float cameraVelocityY;
 
     // Start is called before the first frame update
     void Start()
     {
-        cameraSpeed = 15;
     }
 
     // Update is called once per frame
@@ -21,6 +22,7 @@ public class CameraMovement : MonoBehaviour
     {
         mainCamera.transform.position += new Vector3(0, 0, cameraVelocityX) * Time.deltaTime;
         mainCamera.transform.position += new Vector3(cameraVelocityY, 0, 0) * Time.deltaTime;
+        mainCamera.transform.position += new Vector3(0, Input.mouseScrollDelta.y * scale, 0);
 
         cameraVelocityX = 0; cameraVelocityY = 0;
         if (Input.GetKey(KeyCode.W))
