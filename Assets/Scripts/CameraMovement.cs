@@ -26,8 +26,8 @@ public class CameraMovement : MonoBehaviour
 
         if(cameraVelocityX != 0 || cameraVelocityY != 0)
         {
-            cameraVelocityX *= 0.9f;
-            cameraVelocityY *= 0.9f;
+            cameraVelocityX *= 0.87f;   //for smooth movement
+            cameraVelocityY *= 0.87f;
         }
 
         //cameraVelocityX = 0; cameraVelocityY = 0;
