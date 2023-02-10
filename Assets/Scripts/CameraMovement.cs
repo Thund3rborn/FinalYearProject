@@ -5,7 +5,7 @@ using static UnityEditor.PlayerSettings;
 
 public class CameraMovement : MonoBehaviour
 {
-    public float scale = 1f;
+    public float scale = 10f;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private Transform theCamera;
     [SerializeField] private float cameraSpeed = 15f;
@@ -22,9 +22,15 @@ public class CameraMovement : MonoBehaviour
     {
         mainCamera.transform.position += new Vector3(0, 0, cameraVelocityX) * Time.deltaTime;
         mainCamera.transform.position += new Vector3(cameraVelocityY, 0, 0) * Time.deltaTime;
-        mainCamera.transform.position += new Vector3(0, Input.mouseScrollDelta.y * scale, 0);
+        mainCamera.transform.position += new Vector3(0, Input.mouseScrollDelta.y * scale * Time.deltaTime, 0);
 
-        cameraVelocityX = 0; cameraVelocityY = 0;
+        if(cameraVelocityX != 0 || cameraVelocityY != 0)
+        {
+            cameraVelocityX *= 0.9f;
+            cameraVelocityY *= 0.9f;
+        }
+
+        //cameraVelocityX = 0; cameraVelocityY = 0;
         if (Input.GetKey(KeyCode.W))
         {
             cameraVelocityX = cameraSpeed;
