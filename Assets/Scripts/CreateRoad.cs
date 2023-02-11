@@ -23,7 +23,9 @@ public class CreateRoad : MonoBehaviour
 
     private bool curvedBuildingMode, straightBuildingMode = false;
 
-    private Vector3 startPoint, endPoint;
+    private Vector3 startPoint = Vector3.zero;
+    private Vector3 controlPoint = Vector3.zero;
+    private Vector3 endPoint = Vector3.zero;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
 
 
@@ -36,7 +38,7 @@ public class CreateRoad : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(straightBuildingMode)
+        if (straightBuildingMode)
         {
             StraightRoad();
         }
@@ -52,10 +54,62 @@ public class CreateRoad : MonoBehaviour
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        if (Input.GetMouseButtonDown(0))
-        {
+        Vector2[] line = new Vector2[30];
+        int sizeOfArr = line.Length / 1;
 
+
+        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
+        {
+            if (startPoint == Vector3.zero)
+            {
+                startPoint = raycastHit.point;
+            }
+            else if (controlPoint == Vector3.zero)
+            {
+                controlPoint = raycastHit.point;
+            }
+            else if (endPoint == Vector3.zero)
+            {
+                endPoint = raycastHit.point;
+            }
         }
+        else if(startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
+        {
+            for (int i = 0; i < sizeOfArr; ++i)
+            {
+                double t = (double)i / sizeOfArr;
+                line[i] = quadratic(new Vector2 (startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+
+            }
+
+            Vector3[] theLine = new Vector3[sizeOfArr];
+
+            for(int i = 0; i < line.Length; ++i) 
+            {
+                theLine[i].x = line[i].x;
+                theLine[i].y = gameObject.transform.position.y;
+                theLine[i].z = line[i].y;
+            }
+
+            
+            LineRenderer lineDraw = new GameObject("Line " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+
+            lineDraw.startColor = Color.white;
+            lineDraw.endColor = Color.black;
+            lineDraw.startWidth = 0.1f;
+            lineDraw.endWidth = 0.1f;
+            lineDraw.positionCount = theLine.Length;
+            lineDraw.useWorldSpace = true;
+
+            lineDraw.SetPositions(theLine);
+
+            startPoint = Vector3.zero; endPoint = Vector3.zero; controlPoint = Vector3.zero;
+        }   
+    }
+
+    void CreateCurvedLine()
+    {
+
     }
 
     void StraightRoad()
@@ -211,8 +265,19 @@ public class CreateRoad : MonoBehaviour
         return a + (b - a) * t;
     }
 
-    private Vector2 linear(Vector2 a, Vector2 b, float t)
+    //private Vector2 linear(Vector2 a, Vector2 b, float t)
+    //{
+    //    return new Vector2(lerp(a.x, b.x, t), lerp(a.y, b.y, t));
+    //}
+
+    private Vector2 quadratic(Vector2 a, Vector2 b, Vector2 c, float t)
     {
-        return new Vector2(lerp(a.x, b.x, t), lerp(a.y, b.y, t));
+        Vector2 one, two;
+        one.x = lerp(a.x, b.x, t);
+        one.y = lerp(a.y, b.y, t);
+        two.x = lerp(b.x, c.x, t);
+        two.y = lerp(b.y, c.y, t);
+
+        return new Vector2(lerp(one.x, two.x, t), lerp(one.y, two.y, t));
     }
 }
