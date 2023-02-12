@@ -28,6 +28,8 @@ public class CreateRoad : MonoBehaviour
     private Vector3 endPoint = Vector3.zero;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
 
+    int sizeOfArr;
+    Vector3[] theLine;
 
     // Start is called before the first frame update
     void Start()
@@ -54,8 +56,8 @@ public class CreateRoad : MonoBehaviour
     {
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        Vector2[] line = new Vector2[30];
-        int sizeOfArr = line.Length / 1;
+        Vector2[] line = new Vector2[60];
+        sizeOfArr = line.Length / 1;
 
 
         if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
@@ -73,7 +75,7 @@ public class CreateRoad : MonoBehaviour
                 endPoint = raycastHit.point;
             }
         }
-        else if(startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
+        else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
         {
             for (int i = 0; i < sizeOfArr; ++i)
             {
@@ -82,7 +84,7 @@ public class CreateRoad : MonoBehaviour
 
             }
 
-            Vector3[] theLine = new Vector3[sizeOfArr];
+            theLine = new Vector3[sizeOfArr];
 
             for(int i = 0; i < line.Length; ++i) 
             {
@@ -103,13 +105,53 @@ public class CreateRoad : MonoBehaviour
 
             lineDraw.SetPositions(theLine);
 
+            CreateCurvedRoad();
+
             startPoint = Vector3.zero; endPoint = Vector3.zero; controlPoint = Vector3.zero;
         }   
     }
 
-    void CreateCurvedLine()
+    void CreateCurvedRoad()
     {
+        for (int i = 1; i < sizeOfArr; i++)
+        {
+            Vector3[] vertices = new Vector3[4];
+            Vector2[] uv = new Vector2[4];
+            int[] triangles = new int[6];
 
+            Vector3 direction = (theLine[i] - theLine[i - 1]).normalized;
+            Vector3 normal = Vector3.Cross(direction, Vector3.up).normalized * roadWidth;
+
+            vertices[0] = theLine[i - 1] - normal + new Vector3(0, 0.05f, 0);
+            vertices[1] = theLine[i - 1] + normal + new Vector3(0, 0.05f, 0);
+            vertices[2] = theLine[i ] + normal + new Vector3(0, 0.05f, 0);
+            vertices[3] = theLine[i ] - normal + new Vector3(0, 0.05f, 0);
+
+            uv[3] = new Vector2(0f, 0f);
+            uv[0] = new Vector2(0f, 1f);
+            uv[1] = new Vector2(1f, 1f);
+            uv[2] = new Vector2(1f, 0f);
+
+            triangles[0] = 0;
+            triangles[1] = 1;
+            triangles[2] = 2;
+            triangles[3] = 0;
+            triangles[4] = 2;
+            triangles[5] = 3;
+
+            Mesh mesh = new Mesh();
+            GetComponent<MeshFilter>().mesh = mesh;
+            mesh.Clear();
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.triangles = triangles;
+            mesh.RecalculateBounds();
+            mesh.RecalculateNormals();
+
+            GameObject gameObject = new GameObject("Mesh", typeof(MeshFilter), typeof(MeshRenderer));
+            gameObject.GetComponent<MeshFilter>().mesh = mesh;
+            gameObject.GetComponent<MeshRenderer>().material = material;
+        }
     }
 
     void StraightRoad()
