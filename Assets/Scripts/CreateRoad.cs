@@ -1,7 +1,9 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
 using System.Net;
+using System.Security.Cryptography;
 using Unity.VisualScripting;
 using UnityEditor;
 using UnityEditor.IMGUI.Controls;
@@ -34,7 +36,7 @@ public class CreateRoad : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-
+        sizeOfArr = 0;
     }
 
     // Update is called once per frame
@@ -54,10 +56,13 @@ public class CreateRoad : MonoBehaviour
 
     void CurvedRoad()
     {
+        //Create a line along which the road will be created
+        bool preview = false;
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        Vector2[] line = new Vector2[60];
-        sizeOfArr = line.Length / 1;
+        //sizeOfArr = 60;
+        Vector2[] line = new Vector2[sizeOfArr];
+        //sizeOfArr = line.Length;
 
 
         if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
@@ -77,6 +82,11 @@ public class CreateRoad : MonoBehaviour
         }
         else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
         {
+            //float distance = Math.Sqrt(Math.Pow((x2 - x1), 2) + Math.Pow((y2 - y1), 2));
+
+            double distance = GetDistanceBetweenPoints();
+            sizeOfArr = (int)Math.Round(distance);
+
             for (int i = 0; i < sizeOfArr; ++i)
             {
                 double t = (double)i / sizeOfArr;
@@ -89,7 +99,7 @@ public class CreateRoad : MonoBehaviour
             for(int i = 0; i < line.Length; ++i) 
             {
                 theLine[i].x = line[i].x;
-                theLine[i].y = gameObject.transform.position.y;
+                theLine[i].y = SnapToPointOnObjectBelow(theLine[i]);
                 theLine[i].z = line[i].y;
             }
 
@@ -153,9 +163,20 @@ public class CreateRoad : MonoBehaviour
             gameObject.GetComponent<MeshRenderer>().material = material;
         }
     }
+    private double GetDistanceBetweenPoints()
+    {
+        //distance between first two points
+        double distance1 = Math.Sqrt(Math.Pow((controlPoint.x - startPoint.x), 2) + Math.Pow((controlPoint.z - startPoint.z), 2));
+        //distance between second and third point
+        double distance2 = Math.Sqrt(Math.Pow((endPoint.x - controlPoint.x), 2) + Math.Pow((endPoint.z - controlPoint.z), 2));
+
+        return distance1 + distance2;
+    }
 
     void StraightRoad()
     {
+        //Create a line along which the road will be created
+
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
         //get first coordinate, activate and display preview
@@ -321,5 +342,18 @@ public class CreateRoad : MonoBehaviour
         two.y = lerp(b.y, c.y, t);
 
         return new Vector2(lerp(one.x, two.x, t), lerp(one.y, two.y, t));
+    }
+
+    float SnapToPointOnObjectBelow(Vector3 point)
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(point, Vector3.down, out hit, Mathf.Infinity, layerMask))
+        {
+            return hit.point.y;
+        }
+        else
+        {
+            return point.y;
+        }
     }
 }

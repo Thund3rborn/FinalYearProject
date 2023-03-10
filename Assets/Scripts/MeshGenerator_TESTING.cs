@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class MeshGenerator : MonoBehaviour
+public class MeshGenerator_TESTING : MonoBehaviour
 {
     public Material material;
     public Vector3[] vertices = new Vector3[4];
