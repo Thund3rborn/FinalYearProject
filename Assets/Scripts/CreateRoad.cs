@@ -57,7 +57,7 @@ public class CreateRoad : MonoBehaviour
     void CurvedRoad()
     {
         //Create a line along which the road will be created
-        bool preview = false;
+        //bool preview = false;
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
         //sizeOfArr = 60;
@@ -87,7 +87,7 @@ public class CreateRoad : MonoBehaviour
             double distance = GetDistanceBetweenPoints();
             sizeOfArr = (int)Math.Round(distance);
 
-            for (int i = 0; i < sizeOfArr; ++i)
+            for (int i = 0; i < sizeOfArr; i++)
             {
                 double t = (double)i / sizeOfArr;
                 line[i] = quadratic(new Vector2 (startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
@@ -96,10 +96,10 @@ public class CreateRoad : MonoBehaviour
 
             theLine = new Vector3[sizeOfArr];
 
-            for(int i = 0; i < line.Length; ++i) 
+            for(int i = 0; i < line.Length; i++) 
             {
                 theLine[i].x = line[i].x;
-                theLine[i].y = SnapToPointOnObjectBelow(theLine[i]);
+                theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
                 theLine[i].z = line[i].y;
             }
 
@@ -158,7 +158,7 @@ public class CreateRoad : MonoBehaviour
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
-            GameObject gameObject = new GameObject("Mesh", typeof(MeshFilter), typeof(MeshRenderer));
+            GameObject gameObject = new GameObject("Mesh" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
             gameObject.GetComponent<MeshFilter>().mesh = mesh;
             gameObject.GetComponent<MeshRenderer>().material = material;
         }
@@ -178,6 +178,8 @@ public class CreateRoad : MonoBehaviour
         //Create a line along which the road will be created
 
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+        Vector2[] line = new Vector2[sizeOfArr];
 
         //get first coordinate, activate and display preview
         if (Input.GetMouseButtonDown(0) && !creatingRoad && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask) && startPoint == Vector3.zero)
@@ -204,7 +206,7 @@ public class CreateRoad : MonoBehaviour
             positionsList.Add(startPoint);
             listOfPositionLists.Add(positionsList);
 
-            GenerateMesh();
+            GenerateStraightRoadMesh();
 
             for (int i = 0; i < listOfPositionLists.Count; i++)
             {
@@ -258,7 +260,7 @@ public class CreateRoad : MonoBehaviour
         theLine.SetPosition(1, endPoint);
     }
 
-    private void GenerateMesh()
+    private void GenerateStraightRoadMesh()
     {
         Vector3[] vertices = new Vector3[4];
         Vector2[] uv = new Vector2[4];
@@ -344,7 +346,7 @@ public class CreateRoad : MonoBehaviour
         return new Vector2(lerp(one.x, two.x, t), lerp(one.y, two.y, t));
     }
 
-    float SnapToPointOnObjectBelow(Vector3 point)
+    float SnapPointToTerrainBelow(Vector3 point)
     {
         RaycastHit hit;
         if (Physics.Raycast(point, Vector3.down, out hit, Mathf.Infinity, layerMask))
