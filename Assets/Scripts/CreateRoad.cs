@@ -19,11 +19,12 @@ public class CreateRoad : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private Button button;
+    //private GameObject roadGrid;
 
     //private bool preview = false;
     //private bool creatingRoad = false;
 
-    private bool curvedBuildingMode, straightBuildingMode = false;
+    private bool curvedBuildingMode, straightBuildingMode, previewOn = false;
 
     private Vector3 startPoint = Vector3.zero;
     private Vector3 controlPoint = Vector3.zero;
@@ -81,14 +82,16 @@ public class CreateRoad : MonoBehaviour
         else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
         {
             double distance = GetDistanceBetweenPoints();
-            sizeOfArr = (int)Math.Round(distance);
+            sizeOfArr = (int)Math.Round(distance) + 1;
+            //sizeOfArr = 10 + 1;
 
-            for (int i = 0; i < sizeOfArr; i++)
+            for (int i = 0; i < (sizeOfArr - 1); i++)
             {
-                double t = (double)i / sizeOfArr;
+                double t = i / (double)(sizeOfArr - 1);
                 line[i] = quadratic(new Vector2 (startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
 
             }
+            line[sizeOfArr-1] = new Vector2(endPoint.x, endPoint.z);
 
             theLine = new Vector3[sizeOfArr];
 
@@ -98,9 +101,8 @@ public class CreateRoad : MonoBehaviour
                 theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
                 theLine[i].z = line[i].y;
             }
-
-            
             LineRenderer lineDraw = new GameObject("Line " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+            lineDraw.transform.SetParent(transform, true);
 
             lineDraw.startColor = Color.white;
             lineDraw.endColor = Color.black;
@@ -111,7 +113,7 @@ public class CreateRoad : MonoBehaviour
 
             lineDraw.SetPositions(theLine);
 
-            CreateRoadMesh();
+            CreateRoadMesh(lineDraw);
 
             startPoint = Vector3.zero; endPoint = Vector3.zero; controlPoint = Vector3.zero;
         }   
@@ -131,16 +133,24 @@ public class CreateRoad : MonoBehaviour
             if (startPoint == Vector3.zero)
             {
                 startPoint = raycastHit.point;
+                //previewOn = true;
             }
-            else if (endPoint == Vector3.zero)
+            else if (endPoint == Vector3.zero && !previewOn)
             {
                 endPoint = raycastHit.point;
             }
         }
+        //else if(previewOn && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+        //{
+        //    endPoint = raycastHit.point;
+        //}
         else if (startPoint != Vector3.zero && endPoint != Vector3.zero)
         {
+            //GameObject roadObject = new GameObject("Road" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+
             double distance = GetDistanceBetweenPoints();
-            sizeOfArr = (int)Math.Round(distance);
+            sizeOfArr = (int)Math.Round(distance) + 1;
+            //sizeOfArr = 5;
 
             for (int i = 0; i < sizeOfArr; i++)
             {
@@ -148,6 +158,7 @@ public class CreateRoad : MonoBehaviour
                 line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
 
             }
+            line[sizeOfArr-1] = new Vector2(endPoint.x, endPoint.z);
 
             theLine = new Vector3[sizeOfArr];
 
@@ -159,7 +170,8 @@ public class CreateRoad : MonoBehaviour
             }
 
 
-            LineRenderer lineDraw = new GameObject("Line " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+            LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+            lineDraw.transform.SetParent(transform, true);
 
             lineDraw.startColor = Color.white;
             lineDraw.endColor = Color.black;
@@ -170,13 +182,13 @@ public class CreateRoad : MonoBehaviour
 
             lineDraw.SetPositions(theLine);
 
-            CreateRoadMesh();
+            CreateRoadMesh(lineDraw);
 
             startPoint = Vector3.zero; endPoint = Vector3.zero;
         }
     }
 
-    void CreateRoadMesh()
+    void CreateRoadMesh(LineRenderer lr)
     {
         for (int i = 1; i < sizeOfArr; i++)
         {
@@ -213,9 +225,10 @@ public class CreateRoad : MonoBehaviour
             mesh.RecalculateBounds();
             mesh.RecalculateNormals();
 
-            GameObject gameObject = new GameObject("Mesh" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
-            gameObject.GetComponent<MeshFilter>().mesh = mesh;
-            gameObject.GetComponent<MeshRenderer>().material = material;
+            GameObject roadSegment = new GameObject("Segment" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+            roadSegment.GetComponent<MeshFilter>().mesh = mesh;
+            roadSegment.GetComponent<MeshRenderer>().material = material;
+            roadSegment.transform.SetParent(lr.transform, true);
         }
     }
     private double GetDistanceBetweenPoints()
