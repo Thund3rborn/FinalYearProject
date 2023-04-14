@@ -15,6 +15,7 @@ public class CreateRoad : MonoBehaviour
     public MousePos mousePos;
     public Material material;
     public float roadWidth = 1f;
+    public float roadHeightOffset = 0f;
 
     [SerializeField] private Camera mainCamera;
     [SerializeField] private LayerMask layerMask;
@@ -82,16 +83,17 @@ public class CreateRoad : MonoBehaviour
         else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
         {
             double distance = GetDistanceBetweenPoints();
-            sizeOfArr = (int)Math.Round(distance) + 1;
-            //sizeOfArr = 10 + 1;
+            //sizeOfArr = (int)Math.Round(distance) + 1;
+            sizeOfArr = 10;
 
-            for (int i = 0; i < (sizeOfArr - 1); i++)
+            for (int i = 0; i < sizeOfArr; i++)
             {
                 double t = i / (double)(sizeOfArr - 1);
                 line[i] = quadratic(new Vector2 (startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
-
             }
-            line[sizeOfArr-1] = new Vector2(endPoint.x, endPoint.z);
+
+            
+            //line[sizeOfArr - 1] = new Vector2(endPoint.x, endPoint.z);
 
             theLine = new Vector3[sizeOfArr];
 
@@ -101,7 +103,7 @@ public class CreateRoad : MonoBehaviour
                 theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
                 theLine[i].z = line[i].y;
             }
-            LineRenderer lineDraw = new GameObject("Line " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+            LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
             lineDraw.transform.SetParent(transform, true);
 
             lineDraw.startColor = Color.white;
@@ -263,6 +265,17 @@ public class CreateRoad : MonoBehaviour
             Debug.Log("CURVEDBuildingMode set to OFF");
             curvedBuildingMode = false;
         }
+
+        if (Input.GetKeyDown(KeyCode.PageUp))
+        {
+            roadHeightOffset += 0.5f;
+            Debug.Log("Page up key pressed");
+        }
+        else if (Input.GetKeyDown(KeyCode.PageDown))
+        {
+            roadHeightOffset -= 0.5f;
+            Debug.Log("Page down key pressed");
+        }
     }
 
     private float lerp(float a, float b, float t)
@@ -291,7 +304,7 @@ public class CreateRoad : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(point, Vector3.down, out hit, Mathf.Infinity, layerMask))
         {
-            return hit.point.y;
+            return hit.point.y + roadHeightOffset;
         }
         else
         {
