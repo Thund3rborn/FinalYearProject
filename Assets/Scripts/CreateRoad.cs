@@ -83,8 +83,8 @@ public class CreateRoad : MonoBehaviour
         else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
         {
             double distance = GetDistanceBetweenPoints();
-            //sizeOfArr = (int)Math.Round(distance) + 1;
-            sizeOfArr = 10;
+            sizeOfArr = (int)Math.Round(distance) + 1;
+            //sizeOfArr = 10;
 
             for (int i = 0; i < sizeOfArr; i++)
             {
@@ -106,8 +106,7 @@ public class CreateRoad : MonoBehaviour
             LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
             lineDraw.transform.SetParent(transform, true);
 
-            lineDraw.startColor = Color.white;
-            lineDraw.endColor = Color.black;
+            lineDraw.material.color = Color.red;
             lineDraw.startWidth = 0.1f;
             lineDraw.endWidth = 0.1f;
             lineDraw.positionCount = theLine.Length;
@@ -175,8 +174,7 @@ public class CreateRoad : MonoBehaviour
             LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
             lineDraw.transform.SetParent(transform, true);
 
-            lineDraw.startColor = Color.white;
-            lineDraw.endColor = Color.black;
+            lineDraw.material.color = Color.red;
             lineDraw.startWidth = 0.1f;
             lineDraw.endWidth = 0.1f;
             lineDraw.positionCount = theLine.Length;
