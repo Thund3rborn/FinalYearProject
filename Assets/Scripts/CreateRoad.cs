@@ -25,12 +25,14 @@ public class CreateRoad : MonoBehaviour
     //private bool preview = false;
     //private bool creatingRoad = false;
 
-    private bool curvedBuildingMode, straightBuildingMode, previewOn = false;
+    private bool curvedBuildingMode, straightBuildingMode, previewOn, lineCreated = false;
 
     private Vector3 startPoint = Vector3.zero;
     private Vector3 controlPoint = Vector3.zero;
     private Vector3 endPoint = Vector3.zero;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
+
+    LineRenderer lineDraw; Vector2[] line;
 
     int sizeOfArr;
     Vector3[] theLine;
@@ -119,74 +121,149 @@ public class CreateRoad : MonoBehaviour
             startPoint = Vector3.zero; endPoint = Vector3.zero; controlPoint = Vector3.zero;
         }   
     }
-
-    //create straight road
     void StraightRoad()
     {
-        //create a line along which the road will be created
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        Vector2[] line = new Vector2[sizeOfArr];
 
-
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
+        if (startPoint == Vector3.zero && Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
         {
-            if (startPoint == Vector3.zero)
-            {
-                startPoint = raycastHit.point;
-                //previewOn = true;
-            }
-            else if (endPoint == Vector3.zero && !previewOn)
-            {
-                endPoint = raycastHit.point;
-            }
+            startPoint = raycastHit.point;
         }
-        //else if(previewOn && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
-        //{
-        //    endPoint = raycastHit.point;
-        //}
-        else if (startPoint != Vector3.zero && endPoint != Vector3.zero)
+
+        //update as long as the road is not created and the preview is on
+        if(!lineCreated && startPoint != Vector3.zero && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask)) 
+        { 
+            endPoint = raycastHit.point;
+            CreateLine();
+            lineCreated = true;
+        }
+
+        PreviewUpdate();
+
+       
+    }
+    void CreateLine()
+    {
+        line = new Vector2[sizeOfArr];
+        double distance = GetDistanceBetweenPoints();
+        sizeOfArr = (int)Math.Round(distance) + 1;
+
+        for (int i = 0; i < sizeOfArr; i++)
         {
-            //GameObject roadObject = new GameObject("Road" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+            double t = i / (double)(sizeOfArr - 1);
+            line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+        }
 
-            double distance = GetDistanceBetweenPoints();
-            sizeOfArr = (int)Math.Round(distance) + 1;
-            //sizeOfArr = 5;
+        theLine = new Vector3[sizeOfArr];
 
-            for (int i = 0; i < sizeOfArr; i++)
-            {
-                double t = (double)i / sizeOfArr;
-                line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+        for (int i = 0; i < line.Length; i++)
+        {
+            theLine[i].x = line[i].x;
+            theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
+            theLine[i].z = line[i].y;
+        }
+        lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+        lineDraw.transform.SetParent(transform, true);
 
-            }
-            line[sizeOfArr-1] = new Vector2(endPoint.x, endPoint.z);
+        lineDraw.material.color = Color.red;
+        lineDraw.startWidth = 0.1f;
+        lineDraw.endWidth = 0.1f;
+        lineDraw.positionCount = theLine.Length;
+        lineDraw.useWorldSpace = true;
 
-            theLine = new Vector3[sizeOfArr];
+        lineDraw.SetPositions(theLine);
 
-            for (int i = 0; i < line.Length; i++)
-            {
-                theLine[i].x = line[i].x;
-                theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
-                theLine[i].z = line[i].y;
-            }
+        CreateRoadMesh(lineDraw);
+    }
 
+    void PreviewUpdate()
+    {
+        double distance = GetDistanceBetweenPoints();
+        sizeOfArr = (int)Math.Round(distance) + 1;
 
-            LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
-            lineDraw.transform.SetParent(transform, true);
+        for (int i = 0; i < sizeOfArr; i++)
+        {
+            double t = i / (double)(sizeOfArr - 1);
+            line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+        }
 
-            lineDraw.material.color = Color.red;
-            lineDraw.startWidth = 0.1f;
-            lineDraw.endWidth = 0.1f;
-            lineDraw.positionCount = theLine.Length;
-            lineDraw.useWorldSpace = true;
-
-            lineDraw.SetPositions(theLine);
-
-            CreateRoadMesh(lineDraw);
-
-            startPoint = Vector3.zero; endPoint = Vector3.zero;
+        for (int i = 0; i < line.Length; i++)
+        {
+            theLine[i].x = line[i].x;
+            theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
+            theLine[i].z = line[i].y;
         }
     }
+
+    //create straight road
+    //void StraightRoad()
+    //{
+    //    //create a line along which the road will be created
+    //    Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+
+    //    Vector2[] line = new Vector2[sizeOfArr];
+
+
+    //    if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
+    //    {
+    //        if (startPoint == Vector3.zero)
+    //        {
+    //            startPoint = raycastHit.point;
+    //            previewOn = true;
+    //        }
+    //        else if (!previewOn)
+    //        {
+    //            endPoint = raycastHit.point;
+    //        }
+    //    }
+    //    else if (previewOn && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+    //    {
+    //        //set the enPoint temorarily to current cursor position
+    //        endPoint = raycastHit.point;
+    //    }
+    //    else if (startPoint != Vector3.zero && endPoint != Vector3.zero)
+    //    {
+    //        //GameObject roadObject = new GameObject("Road" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+
+    //        double distance = GetDistanceBetweenPoints();
+    //        sizeOfArr = (int)Math.Round(distance) + 1;
+    //        //sizeOfArr = 5;
+
+    //        for (int i = 0; i < sizeOfArr; i++)
+    //        {
+    //            double t = (double)i / sizeOfArr;
+    //            line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+
+    //        }
+    //        line[sizeOfArr-1] = new Vector2(endPoint.x, endPoint.z);
+
+    //        theLine = new Vector3[sizeOfArr];
+
+    //        for (int i = 0; i < line.Length; i++)
+    //        {
+    //            theLine[i].x = line[i].x;
+    //            theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
+    //            theLine[i].z = line[i].y;
+    //        }
+
+
+    //        LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
+    //        lineDraw.transform.SetParent(transform, true);
+
+    //        lineDraw.material.color = Color.red;
+    //        lineDraw.startWidth = 0.1f;
+    //        lineDraw.endWidth = 0.1f;
+    //        lineDraw.positionCount = theLine.Length;
+    //        lineDraw.useWorldSpace = true;
+
+    //        lineDraw.SetPositions(theLine);
+
+    //        CreateRoadMesh(lineDraw);
+
+    //        startPoint = Vector3.zero; endPoint = Vector3.zero;
+    //    }
+    //}
 
     void CreateRoadMesh(LineRenderer lr)
     {
