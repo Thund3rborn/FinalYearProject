@@ -46,11 +46,11 @@ public class CreateRoad : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (straightBuildingMode)
-        {
-            StraightRoad();
-        }
-        if (curvedBuildingMode)
+        //if (straightBuildingMode)
+        //{
+        //    StraightRoad();
+        //}
+        //if (curvedBuildingMode)
         {
             CurvedRoad();
         }
@@ -116,198 +116,55 @@ public class CreateRoad : MonoBehaviour
 
             lineDraw.SetPositions(theLine);
 
-            CreateRoadMesh(lineDraw);
+            //CreateRoadMesh(lineDraw);
 
             startPoint = Vector3.zero; endPoint = Vector3.zero; controlPoint = Vector3.zero;
         }   
     }
-    void StraightRoad()
-    {
-        Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-
-        if (startPoint == Vector3.zero && Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
-        {
-            startPoint = raycastHit.point;
-        }
-
-        //update as long as the road is not created and the preview is on
-        if(!lineCreated && startPoint != Vector3.zero && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask)) 
-        { 
-            endPoint = raycastHit.point;
-            CreateLine();
-            lineCreated = true;
-        }
-
-        PreviewUpdate();
-
-       
-    }
-    void CreateLine()
-    {
-        line = new Vector2[sizeOfArr];
-        double distance = GetDistanceBetweenPoints();
-        sizeOfArr = (int)Math.Round(distance) + 1;
-
-        for (int i = 0; i < sizeOfArr; i++)
-        {
-            double t = i / (double)(sizeOfArr - 1);
-            line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
-        }
-
-        theLine = new Vector3[sizeOfArr];
-
-        for (int i = 0; i < line.Length; i++)
-        {
-            theLine[i].x = line[i].x;
-            theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
-            theLine[i].z = line[i].y;
-        }
-        lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
-        lineDraw.transform.SetParent(transform, true);
-
-        lineDraw.material.color = Color.red;
-        lineDraw.startWidth = 0.1f;
-        lineDraw.endWidth = 0.1f;
-        lineDraw.positionCount = theLine.Length;
-        lineDraw.useWorldSpace = true;
-
-        lineDraw.SetPositions(theLine);
-
-        CreateRoadMesh(lineDraw);
-    }
-
-    void PreviewUpdate()
-    {
-        double distance = GetDistanceBetweenPoints();
-        sizeOfArr = (int)Math.Round(distance) + 1;
-
-        for (int i = 0; i < sizeOfArr; i++)
-        {
-            double t = i / (double)(sizeOfArr - 1);
-            line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
-        }
-
-        for (int i = 0; i < line.Length; i++)
-        {
-            theLine[i].x = line[i].x;
-            theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
-            theLine[i].z = line[i].y;
-        }
-    }
-
-    //create straight road
-    //void StraightRoad()
+   
+    //void CreateRoadMesh(LineRenderer lr)
     //{
-    //    //create a line along which the road will be created
-    //    Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
-
-    //    Vector2[] line = new Vector2[sizeOfArr];
-
-
-    //    if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
+    //    for (int i = 1; i < sizeOfArr; i++)
     //    {
-    //        if (startPoint == Vector3.zero)
-    //        {
-    //            startPoint = raycastHit.point;
-    //            previewOn = true;
-    //        }
-    //        else if (!previewOn)
-    //        {
-    //            endPoint = raycastHit.point;
-    //        }
-    //    }
-    //    else if (previewOn && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
-    //    {
-    //        //set the enPoint temorarily to current cursor position
-    //        endPoint = raycastHit.point;
-    //    }
-    //    else if (startPoint != Vector3.zero && endPoint != Vector3.zero)
-    //    {
-    //        //GameObject roadObject = new GameObject("Road" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+    //        Vector3[] vertices = new Vector3[4];
+    //        Vector2[] uv = new Vector2[4];
+    //        int[] triangles = new int[6];
 
-    //        double distance = GetDistanceBetweenPoints();
-    //        sizeOfArr = (int)Math.Round(distance) + 1;
-    //        //sizeOfArr = 5;
+    //        Vector3 direction = (theLine[i] - theLine[i - 1]).normalized;
+    //        Vector3 normal = Vector3.Cross(direction, Vector3.up).normalized * roadWidth;
 
-    //        for (int i = 0; i < sizeOfArr; i++)
-    //        {
-    //            double t = (double)i / sizeOfArr;
-    //            line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+    //        vertices[0] = theLine[i - 1] - normal + new Vector3(0, 0.05f, 0);
+    //        vertices[1] = theLine[i - 1] + normal + new Vector3(0, 0.05f, 0);
+    //        vertices[2] = theLine[i] + normal + new Vector3(0, 0.05f, 0);
+    //        vertices[3] = theLine[i] - normal + new Vector3(0, 0.05f, 0);
 
-    //        }
-    //        line[sizeOfArr-1] = new Vector2(endPoint.x, endPoint.z);
+    //        uv[3] = new Vector2(0f, 0f);
+    //        uv[0] = new Vector2(0f, 1f);
+    //        uv[1] = new Vector2(1f, 1f);
+    //        uv[2] = new Vector2(1f, 0f);
 
-    //        theLine = new Vector3[sizeOfArr];
+    //        triangles[0] = 0;
+    //        triangles[1] = 1;
+    //        triangles[2] = 2;
+    //        triangles[3] = 0;
+    //        triangles[4] = 2;
+    //        triangles[5] = 3;
 
-    //        for (int i = 0; i < line.Length; i++)
-    //        {
-    //            theLine[i].x = line[i].x;
-    //            theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
-    //            theLine[i].z = line[i].y;
-    //        }
+    //        Mesh mesh = new Mesh();
+    //        GetComponent<MeshFilter>().mesh = mesh;
+    //        mesh.Clear();
+    //        mesh.vertices = vertices;
+    //        mesh.uv = uv;
+    //        mesh.triangles = triangles;
+    //        mesh.RecalculateBounds();
+    //        mesh.RecalculateNormals();
 
-
-    //        LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
-    //        lineDraw.transform.SetParent(transform, true);
-
-    //        lineDraw.material.color = Color.red;
-    //        lineDraw.startWidth = 0.1f;
-    //        lineDraw.endWidth = 0.1f;
-    //        lineDraw.positionCount = theLine.Length;
-    //        lineDraw.useWorldSpace = true;
-
-    //        lineDraw.SetPositions(theLine);
-
-    //        CreateRoadMesh(lineDraw);
-
-    //        startPoint = Vector3.zero; endPoint = Vector3.zero;
+    //        GameObject roadSegment = new GameObject("Segment" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+    //        roadSegment.GetComponent<MeshFilter>().mesh = mesh;
+    //        roadSegment.GetComponent<MeshRenderer>().material = material;
+    //        roadSegment.transform.SetParent(lr.transform, true);
     //    }
     //}
-
-    void CreateRoadMesh(LineRenderer lr)
-    {
-        for (int i = 1; i < sizeOfArr; i++)
-        {
-            Vector3[] vertices = new Vector3[4];
-            Vector2[] uv = new Vector2[4];
-            int[] triangles = new int[6];
-
-            Vector3 direction = (theLine[i] - theLine[i - 1]).normalized;
-            Vector3 normal = Vector3.Cross(direction, Vector3.up).normalized * roadWidth;
-
-            vertices[0] = theLine[i - 1] - normal + new Vector3(0, 0.05f, 0);
-            vertices[1] = theLine[i - 1] + normal + new Vector3(0, 0.05f, 0);
-            vertices[2] = theLine[i] + normal + new Vector3(0, 0.05f, 0);
-            vertices[3] = theLine[i] - normal + new Vector3(0, 0.05f, 0);
-
-            uv[3] = new Vector2(0f, 0f);
-            uv[0] = new Vector2(0f, 1f);
-            uv[1] = new Vector2(1f, 1f);
-            uv[2] = new Vector2(1f, 0f);
-
-            triangles[0] = 0;
-            triangles[1] = 1;
-            triangles[2] = 2;
-            triangles[3] = 0;
-            triangles[4] = 2;
-            triangles[5] = 3;
-
-            Mesh mesh = new Mesh();
-            GetComponent<MeshFilter>().mesh = mesh;
-            mesh.Clear();
-            mesh.vertices = vertices;
-            mesh.uv = uv;
-            mesh.triangles = triangles;
-            mesh.RecalculateBounds();
-            mesh.RecalculateNormals();
-
-            GameObject roadSegment = new GameObject("Segment" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
-            roadSegment.GetComponent<MeshFilter>().mesh = mesh;
-            roadSegment.GetComponent<MeshRenderer>().material = material;
-            roadSegment.transform.SetParent(lr.transform, true);
-        }
-    }
     private double GetDistanceBetweenPoints()
     {
         //distance between first two points
