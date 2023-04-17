@@ -14,43 +14,49 @@ public class CreateRoad : MonoBehaviour
 {
     public MousePos mousePos;
     public Material material;
-    public float roadWidth = 1f;
+    //public float roadWidth = 1f;
     public float roadHeightOffset = 0f;
 
     [SerializeField] private Camera mainCamera;
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private Button button;
-    //private GameObject roadGrid;
 
-    //private bool preview = false;
-    //private bool creatingRoad = false;
-
-    private bool curvedBuildingMode, straightBuildingMode, previewOn, lineCreated = false;
+    private bool curvedBuildingMode, straightBuildingMode;
 
     private Vector3 startPoint = Vector3.zero;
     private Vector3 controlPoint = Vector3.zero;
     private Vector3 endPoint = Vector3.zero;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
 
-    LineRenderer lineDraw; Vector2[] line;
-
     int sizeOfArr;
     Vector3[] theLine;
+
+
+
+    private Vector3[] roadPoints;
+    public float roadWidth = 2f;
+
+    private MeshFilter meshFilter;
+    private Mesh roadMesh;
 
     // Start is called before the first frame update
     void Start()
     {
+        // Get the MeshFilter component
+        meshFilter = GetComponent<MeshFilter>();
+        if (meshFilter == null)
+        {
+            meshFilter = gameObject.AddComponent<MeshFilter>();
+        }
+
+        // Create the road mesh
+        //CreateRoadMesh();
         sizeOfArr = 0;
     }
 
     // Update is called once per frame
     void Update()
     {
-        //if (straightBuildingMode)
-        //{
-        //    StraightRoad();
-        //}
-        //if (curvedBuildingMode)
         {
             CurvedRoad();
         }
@@ -94,77 +100,92 @@ public class CreateRoad : MonoBehaviour
                 line[i] = quadratic(new Vector2 (startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
             }
 
-            
+
             //line[sizeOfArr - 1] = new Vector2(endPoint.x, endPoint.z);
 
-            theLine = new Vector3[sizeOfArr];
+            roadPoints = new Vector3[sizeOfArr];
 
             for(int i = 0; i < line.Length; i++) 
             {
-                theLine[i].x = line[i].x;
-                theLine[i].y = SnapPointToTerrainBelow(theLine[i]);
-                theLine[i].z = line[i].y;
+                roadPoints[i].x = line[i].x;
+                roadPoints[i].y = SnapPointToTerrainBelow(roadPoints[i]) + 0.05f;
+                roadPoints[i].z = line[i].y;
             }
-            LineRenderer lineDraw = new GameObject("Road " + listOfPositionLists.Count.ToString()).AddComponent<LineRenderer>();
-            lineDraw.transform.SetParent(transform, true);
-
-            lineDraw.material.color = Color.red;
-            lineDraw.startWidth = 0.1f;
-            lineDraw.endWidth = 0.1f;
-            lineDraw.positionCount = theLine.Length;
-            lineDraw.useWorldSpace = true;
-
-            lineDraw.SetPositions(theLine);
-
-            //CreateRoadMesh(lineDraw);
+            CreateRoadMesh();
 
             startPoint = Vector3.zero; endPoint = Vector3.zero; controlPoint = Vector3.zero;
         }   
     }
-   
-    //void CreateRoadMesh(LineRenderer lr)
-    //{
-    //    for (int i = 1; i < sizeOfArr; i++)
-    //    {
-    //        Vector3[] vertices = new Vector3[4];
-    //        Vector2[] uv = new Vector2[4];
-    //        int[] triangles = new int[6];
 
-    //        Vector3 direction = (theLine[i] - theLine[i - 1]).normalized;
-    //        Vector3 normal = Vector3.Cross(direction, Vector3.up).normalized * roadWidth;
+    void CreateRoadMesh()
+    {
+        // Create a new mesh
+        roadMesh = new Mesh();
+        roadMesh.name = "Road Mesh";
 
-    //        vertices[0] = theLine[i - 1] - normal + new Vector3(0, 0.05f, 0);
-    //        vertices[1] = theLine[i - 1] + normal + new Vector3(0, 0.05f, 0);
-    //        vertices[2] = theLine[i] + normal + new Vector3(0, 0.05f, 0);
-    //        vertices[3] = theLine[i] - normal + new Vector3(0, 0.05f, 0);
+        // Get the number of points in the road
+        int numPoints = roadPoints.Length;
 
-    //        uv[3] = new Vector2(0f, 0f);
-    //        uv[0] = new Vector2(0f, 1f);
-    //        uv[1] = new Vector2(1f, 1f);
-    //        uv[2] = new Vector2(1f, 0f);
+        // Calculate the number of vertices and triangles needed
+        int numVertices = numPoints * 2;
+        int numTriangles = (numPoints - 1) * 2;
 
-    //        triangles[0] = 0;
-    //        triangles[1] = 1;
-    //        triangles[2] = 2;
-    //        triangles[3] = 0;
-    //        triangles[4] = 2;
-    //        triangles[5] = 3;
+        // Create arrays to hold the vertices, triangles, and UVs
+        Vector3[] vertices = new Vector3[numVertices];
+        int[] triangles = new int[numTriangles * 3];
+        Vector2[] uvs = new Vector2[numVertices];
 
-    //        Mesh mesh = new Mesh();
-    //        GetComponent<MeshFilter>().mesh = mesh;
-    //        mesh.Clear();
-    //        mesh.vertices = vertices;
-    //        mesh.uv = uv;
-    //        mesh.triangles = triangles;
-    //        mesh.RecalculateBounds();
-    //        mesh.RecalculateNormals();
+        // Loop through the points in the road
+        for (int i = 0; i < numPoints; i++)
+        {
+            // Calculate the index of the vertices for this segment
+            int vertexIndex = i * 2;
 
-    //        GameObject roadSegment = new GameObject("Segment" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
-    //        roadSegment.GetComponent<MeshFilter>().mesh = mesh;
-    //        roadSegment.GetComponent<MeshRenderer>().material = material;
-    //        roadSegment.transform.SetParent(lr.transform, true);
-    //    }
-    //}
+            // Calculate the position of the vertices for this segment
+            Vector3 segmentDirection = (i < numPoints - 1) ? (roadPoints[i + 1] - roadPoints[i]).normalized : (roadPoints[i] - roadPoints[i - 1]).normalized;
+            Vector3 segmentNormal = Vector3.Cross(segmentDirection, Vector3.up * 2).normalized;
+            Vector3 vertex1 = roadPoints[i] + segmentNormal * roadWidth / 2f;
+            Vector3 vertex2 = roadPoints[i] - segmentNormal * roadWidth / 2f;
+
+            // Add the vertices to the array
+            vertices[vertexIndex] = vertex1;
+            vertices[vertexIndex + 1] = vertex2;
+
+            // Calculate the UVs for the vertices
+            float uvX = (float)i / (float)(numPoints - 1);
+            uvs[vertexIndex] = new Vector2(0, uvX);
+            uvs[vertexIndex + 1] = new Vector2(1, uvX);
+
+            // Add the triangles to the array
+            if (i < numPoints - 1)
+            {
+                int triangleIndex = i * 6;
+                triangles[triangleIndex] = vertexIndex;
+                triangles[triangleIndex + 1] = vertexIndex + 1;
+                triangles[triangleIndex + 2] = vertexIndex + 3;
+                triangles[triangleIndex + 3] = vertexIndex + 3;
+                triangles[triangleIndex + 4] = vertexIndex + 2;
+                triangles[triangleIndex + 5] = vertexIndex;
+            }
+        }
+
+        // Set the vertices, triangles, and UVs on the mesh
+        roadMesh.vertices = vertices;
+        roadMesh.triangles = triangles;
+        roadMesh.uv = uvs;
+
+        // Recalculate the normals and bounds of the mesh
+        roadMesh.RecalculateNormals();
+        roadMesh.RecalculateBounds();
+
+        // Assign the mesh to the MeshFilter component
+        meshFilter.mesh = roadMesh;
+
+        GameObject roadSegment = new GameObject("Segment" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+        roadSegment.GetComponent<MeshFilter>().mesh = roadMesh;
+        roadSegment.GetComponent<MeshRenderer>().material = material;
+        roadSegment.transform.SetParent(gameObject.transform, true);
+    }
     private double GetDistanceBetweenPoints()
     {
         //distance between first two points
