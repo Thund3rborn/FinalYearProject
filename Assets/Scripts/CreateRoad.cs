@@ -65,9 +65,7 @@ public class CreateRoad : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        {
-            CurvedRoad();
-        }
+        CurvedRoad();
 
         ProcessInput();
     }
@@ -87,7 +85,7 @@ public class CreateRoad : MonoBehaviour
             {
                 startPoint = raycastHit.point;
             }
-            else if (controlPoint == Vector3.zero)
+            else if (controlPoint == Vector3.zero && !straightBuildingMode)
             {
                 controlPoint = raycastHit.point;
             }
@@ -98,7 +96,7 @@ public class CreateRoad : MonoBehaviour
                 CreateRoadObject();
             }
         }
-        else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
+        else if ((startPoint != Vector3.zero && endPoint != Vector3.zero) && (controlPoint != Vector3.zero || straightBuildingMode))
         {
             double distance = GetDistanceBetweenPoints();
             sizeOfArr = (int)Math.Round(distance) + 1;
@@ -106,6 +104,9 @@ public class CreateRoad : MonoBehaviour
             for (int i = 0; i < sizeOfArr; i++)
             {
                 double t = i / (double)(sizeOfArr - 1);
+                if(straightBuildingMode)
+                    line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+                else
                 line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
             }
 
@@ -147,7 +148,7 @@ public class CreateRoad : MonoBehaviour
 
                 PreviewMeshUpdate();
             }
-            else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+            else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && !straightBuildingMode && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
             {
 
                 double distance = GetDistanceBetweenPoints();
@@ -174,10 +175,7 @@ public class CreateRoad : MonoBehaviour
 
         if (Input.GetMouseButtonDown(1))
         {
-            startPoint = Vector3.zero;
-            endPoint = Vector3.zero;
-            controlPoint = Vector3.zero;
-            roadMesh.Clear();
+            ResetRoadMesh();
         }
     }
 
@@ -318,6 +316,14 @@ public class CreateRoad : MonoBehaviour
         roadPreview.tag = "Preview";
     }
 
+    void ResetRoadMesh()
+    {
+        startPoint = Vector3.zero;
+        endPoint = Vector3.zero;
+        controlPoint = Vector3.zero;
+        roadMesh.Clear();
+    }
+
     // Merge two meshes together
     private Mesh MergeMeshes(Mesh mesh1, Mesh mesh2)
     {
@@ -384,21 +390,26 @@ public class CreateRoad : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Alpha1) && !straightBuildingMode && !curvedBuildingMode)
         {
+            ResetRoadMesh();
             Debug.Log("STRAIGHTBuildingMode set to ON");
             straightBuildingMode = true;
+
         }
         else if (Input.GetKeyDown(KeyCode.Alpha1) && straightBuildingMode)
         {
+            ResetRoadMesh();
             Debug.Log("STRAIGHTBuildingMode set to OFF");
             straightBuildingMode = false;
         }
         if (Input.GetKeyDown(KeyCode.Alpha2) && !curvedBuildingMode && !straightBuildingMode)
         {
+            ResetRoadMesh();
             Debug.Log("CURVEDBuildingMode set to ON");
             curvedBuildingMode = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2) && curvedBuildingMode)
         {
+            ResetRoadMesh();
             Debug.Log("CURVEDBuildingMode set to OFF");
             curvedBuildingMode = false;
         }
