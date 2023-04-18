@@ -95,6 +95,7 @@ public class CreateRoad : MonoBehaviour
             {
                 endPoint = raycastHit.point;
                 keepTrackOfEndPoint = endPoint;
+                CreateRoadObject();
             }
         }
         else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
@@ -178,15 +179,6 @@ public class CreateRoad : MonoBehaviour
                 PreviewMeshUpdate();
                 //Destroy(GameObject.FindGameObjectWithTag("Preview")); // Destroy the child GameObject
             }
-            else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
-            {
-                GameObject roadSegment = new GameObject("Segment" + counter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
-                roadSegment.GetComponent<MeshFilter>().mesh = roadMesh;
-                roadSegment.GetComponent<MeshRenderer>().material = material;
-                roadSegment.tag = "Road";
-                roadSegment.transform.SetParent(gameObject.transform, true);
-                counter++;
-            }
         }
 
         if (Input.GetMouseButtonDown(1))
@@ -196,6 +188,74 @@ public class CreateRoad : MonoBehaviour
             controlPoint = Vector3.zero;
             roadMesh.Clear();
         }
+    }
+
+    void CreateRoadObject()
+    {
+        roadMesh.name = "Road Mesh";
+
+        // Get the number of points in the road
+        int numPoints = roadPoints.Length;
+
+        // Calculate the number of vertices and triangles needed
+        int numVertices = numPoints * 2;
+        int numTriangles = (numPoints - 1) * 2;
+
+        // Create arrays to hold the vertices, triangles, and UVs
+        Vector3[] vertices = new Vector3[numVertices];
+        int[] triangles = new int[numTriangles * 3];
+        Vector2[] uvs = new Vector2[numVertices];
+
+        // Loop through the points in the road
+        for (int i = 0; i < numPoints; i++)
+        {
+            // Calculate the index of the vertices for this segment
+            int vertexIndex = i * 2;
+
+            // Calculate the position of the vertices for this segment
+            Vector3 segmentDirection = (i < numPoints - 1) ? (roadPoints[i + 1] - roadPoints[i]).normalized : (roadPoints[i] - roadPoints[i - 1]).normalized;
+            Vector3 segmentNormal = Vector3.Cross(segmentDirection, Vector3.up * 2).normalized;
+            Vector3 vertex1 = roadPoints[i] + segmentNormal * roadWidth / 2f;
+            Vector3 vertex2 = roadPoints[i] - segmentNormal * roadWidth / 2f;
+
+            // Add the vertices to the array
+            vertices[vertexIndex] = vertex1;
+            vertices[vertexIndex + 1] = vertex2;
+
+            // Calculate the UVs for the vertices
+            float uvX = (float)i / (float)(numPoints - 1);
+            uvs[vertexIndex] = new Vector2(0, uvX);
+            uvs[vertexIndex + 1] = new Vector2(1, uvX);
+
+            // Add the triangles to the array
+            if (i < numPoints - 1)
+            {
+                int triangleIndex = i * 6;
+                triangles[triangleIndex] = vertexIndex;
+                triangles[triangleIndex + 1] = vertexIndex + 1;
+                triangles[triangleIndex + 2] = vertexIndex + 3;
+                triangles[triangleIndex + 3] = vertexIndex + 3;
+                triangles[triangleIndex + 4] = vertexIndex + 2;
+                triangles[triangleIndex + 5] = vertexIndex;
+            }
+
+        }
+
+        // Set the vertices, triangles, and UVs on the mesh
+        roadMesh.vertices = vertices;
+        roadMesh.triangles = triangles;
+        roadMesh.uv = uvs;
+
+        // Recalculate the normals and bounds of the mesh
+        roadMesh.RecalculateNormals();
+        roadMesh.RecalculateBounds();
+
+        GameObject roadSegment = new GameObject("Segment" + counter, typeof(MeshFilter), typeof(MeshRenderer));
+        roadSegment.GetComponent<MeshFilter>().mesh = Instantiate(roadMesh);
+        roadSegment.GetComponent<MeshRenderer>().material = material;
+        roadSegment.tag = "Road";
+        roadSegment.transform.SetParent(gameObject.transform, true);
+        counter++;
     }
 
     void PreviewMeshUpdate()
