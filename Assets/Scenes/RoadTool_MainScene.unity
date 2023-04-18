@@ -525,6 +525,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mousePos: {fileID: 485697289}
   material: {fileID: 2100000, guid: d45a8827e37bf024a816e2795b60db86, type: 2}
+  previewMaterial1: {fileID: 2100000, guid: 87e72d86240225a4999eb3779cb8945d, type: 2}
+  previewMaterial2: {fileID: 2100000, guid: 798e09ceb4fffe04186c4836bf40665e, type: 2}
   roadHeightOffset: 0
   mainCamera: {fileID: 963194227}
   layerMask:

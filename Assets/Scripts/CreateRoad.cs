@@ -17,6 +17,8 @@ public class CreateRoad : MonoBehaviour
 {
     public MousePos mousePos;
     public Material material;
+    public Material previewMaterial1;
+    public Material previewMaterial2;
     //public float roadWidth = 1f;
     public float roadHeightOffset = 0f;
 
@@ -312,7 +314,10 @@ public class CreateRoad : MonoBehaviour
         meshFilter.mesh = roadMesh;
 
         roadPreview.GetComponent<MeshFilter>().mesh = roadMesh;
-        roadPreview.GetComponent<MeshRenderer>().material = material;
+        if(straightBuildingMode || !straightBuildingMode && controlPoint != Vector3.zero)
+          roadPreview.GetComponent<MeshRenderer>().material = previewMaterial2;
+        else
+            roadPreview.GetComponent<MeshRenderer>().material = previewMaterial1;
         roadPreview.tag = "Preview";
     }
 
