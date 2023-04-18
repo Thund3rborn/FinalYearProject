@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Tracing;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using Unity.VisualScripting;
@@ -9,6 +10,8 @@ using UnityEditor;
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.UIElements;
+using UnityEngine.XR;
+using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 public class CreateRoad : MonoBehaviour
 {
@@ -26,10 +29,14 @@ public class CreateRoad : MonoBehaviour
     private Vector3 startPoint = Vector3.zero;
     private Vector3 controlPoint = Vector3.zero;
     private Vector3 endPoint = Vector3.zero;
+    private Vector3 keepTrackOfEndPoint= Vector3.zero;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
+    int counter = 1;
 
     int sizeOfArr;
     Vector3[] theLine;
+
+    public float sphereRadius = 0.5f;
 
 
 
@@ -86,6 +93,7 @@ public class CreateRoad : MonoBehaviour
             else if (endPoint == Vector3.zero)
             {
                 endPoint = raycastHit.point;
+                keepTrackOfEndPoint = endPoint;
             }
         }
         else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
@@ -113,8 +121,17 @@ public class CreateRoad : MonoBehaviour
             }
             CreateRoadMesh();
 
-            startPoint = Vector3.zero; endPoint = Vector3.zero; controlPoint = Vector3.zero;
+            startPoint = endPoint; 
+            endPoint = Vector3.zero; 
+            controlPoint = Vector3.zero;
         }   
+
+        if(Input.GetMouseButtonDown(1))
+        {
+            startPoint = Vector3.zero;
+            endPoint = Vector3.zero;
+            controlPoint = Vector3.zero;
+        }
     }
 
     void CreateRoadMesh()
@@ -167,6 +184,7 @@ public class CreateRoad : MonoBehaviour
                 triangles[triangleIndex + 4] = vertexIndex + 2;
                 triangles[triangleIndex + 5] = vertexIndex;
             }
+            
         }
 
         // Set the vertices, triangles, and UVs on the mesh
@@ -178,14 +196,92 @@ public class CreateRoad : MonoBehaviour
         roadMesh.RecalculateNormals();
         roadMesh.RecalculateBounds();
 
-        // Assign the mesh to the MeshFilter component
         meshFilter.mesh = roadMesh;
 
-        GameObject roadSegment = new GameObject("Segment" + listOfPositionLists.Count.ToString(), typeof(MeshFilter), typeof(MeshRenderer));
+
+        
+        // If they don't intersect, create a new game object for the new road segment
+        GameObject roadSegment = new GameObject("Segment" + counter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
         roadSegment.GetComponent<MeshFilter>().mesh = roadMesh;
         roadSegment.GetComponent<MeshRenderer>().material = material;
+        roadSegment.tag = "Road";
         roadSegment.transform.SetParent(gameObject.transform, true);
+        counter++;
+
+        //GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("Road");
+
+        //// Check if vertex is inside mesh2
+        //for (int g = 0; g < objectsWithTag.Length-1; g++)
+        //{
+        //    MeshFilter meshFilter = objectsWithTag[g].GetComponent<MeshFilter>();
+
+        //    // Get the mesh from the MeshFilter component
+        //    Mesh mesh = meshFilter.mesh;
+
+        //    //if (AreMeshesIntersecting(mesh, roadMesh))
+        //    {
+        //        Debug.Log("Intersects!");
+        //        objectsWithTag[g].GetComponent<MeshFilter>().mesh = MergeMeshes(mesh, roadMesh);
+        //        //Destroy(objectsWithTag[g]);
+        //        Destroy(roadSegment);
+        //        break;
+        //    }
+        //}
+
     }
+
+    // Merge two meshes together
+    private Mesh MergeMeshes(Mesh mesh1, Mesh mesh2)
+    {
+        // Combine the vertices, triangles, and UVs of both meshes
+        Vector3[] combinedVertices = mesh1.vertices.Concat(mesh2.vertices).ToArray();
+        int[] combinedTriangles = mesh1.triangles.Concat(mesh2.triangles.Select(index => index + mesh1.vertexCount)).ToArray();
+        Vector2[] combinedUVs = mesh1.uv.Concat(mesh2.uv).ToArray();
+
+        // Find the intersection point where the two meshes meet
+        Vector3 intersectionPoint = Vector3.zero;
+        for (int i = 0; i < mesh1.vertices.Length; i++)
+        {
+            for (int j = 0; j < mesh2.vertices.Length; j++)
+            {
+                if (mesh1.vertices[i] == mesh2.vertices[j])
+                {
+                    intersectionPoint = mesh1.vertices[i];
+                    break;
+                }
+            }
+        }
+
+        // Modify the vertices to create the junction
+        for (int i = 0; i < combinedVertices.Length; i++)
+        {
+            if (combinedVertices[i] == intersectionPoint)
+            {
+                combinedVertices[i] = new Vector3(intersectionPoint.x, intersectionPoint.y + 1f, intersectionPoint.z);
+            }
+        }
+
+        // Create a new mesh and set its vertices, triangles, and UVs
+        Mesh mergedMesh = new Mesh();
+        mergedMesh.vertices = combinedVertices;
+        mergedMesh.triangles = combinedTriangles;
+        mergedMesh.uv = combinedUVs;
+
+        // Recalculate the normals and bounds of the merged mesh
+        mergedMesh.RecalculateNormals();
+        mergedMesh.RecalculateBounds();
+
+        // Create a new GameObject for the merged mesh
+        //GameObject newlyMergedSegment = new GameObject("Merged Segment", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+        //newlyMergedSegment.GetComponent<MeshFilter>().mesh = mergedMesh;
+        //newlyMergedSegment.GetComponent<MeshRenderer>().material = material;
+        //newlyMergedSegment.tag = "Road";
+        //newlyMergedSegment.transform.SetParent(gameObject.transform, true);
+
+        //return newlyMergedSegment;
+        return mergedMesh;
+    }
+
     private double GetDistanceBetweenPoints()
     {
         //distance between first two points
@@ -264,4 +360,65 @@ public class CreateRoad : MonoBehaviour
             return point.y;
         }
     }
+    bool AreMeshesIntersecting(Mesh mesh1, Mesh mesh2)
+    {
+        // Get the triangles of each mesh
+        int[] triangles1 = mesh1.triangles;
+        int[] triangles2 = mesh2.triangles;
+
+        // Get the vertices of each mesh
+        Vector3[] vertices1 = mesh1.vertices;
+        Vector3[] vertices2 = mesh2.vertices;
+
+        // Check if any triangle of mesh1 intersects with any triangle of mesh2
+        for (int i = 0; i < triangles1.Length; i += 3)
+        {
+            Vector3 v1 = vertices1[triangles1[i]];
+            Vector3 v2 = vertices1[triangles1[i + 1]];
+            Vector3 v3 = vertices1[triangles1[i + 2]];
+            Plane plane1 = new Plane(v1, v2, v3);
+
+            for (int j = 0; j < triangles2.Length; j += 3)
+            {
+                Vector3 w1 = vertices2[triangles2[j]];
+                Vector3 w2 = vertices2[triangles2[j + 1]];
+                Vector3 w3 = vertices2[triangles2[j + 2]];
+                Plane plane2 = new Plane(w1, w2, w3);
+
+                if (ArePlanesIntersecting(plane1, plane2))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    bool ArePlanesIntersecting(Plane plane1, Plane plane2)
+    {
+        Vector3 normal1 = plane1.normal;
+        Vector3 normal2 = plane2.normal;
+
+        // Check if the planes are parallel
+        if (Vector3.Dot(normal1, normal2) == 1f)
+        {
+            return false;
+        }
+
+        // Find the intersection line between the planes
+        Vector3 lineDirection = Vector3.Cross(normal1, normal2);
+        Vector3 linePoint = (-(plane1.distance * normal2) + (plane2.distance * normal1)) / lineDirection.sqrMagnitude;
+        Ray intersectionLine = new Ray(linePoint, lineDirection);
+
+        // Check if the intersection line is inside both planes
+        if (!plane1.Raycast(intersectionLine, out float enter1) || !plane2.Raycast(intersectionLine, out float enter2))
+        {
+            return false;
+        }
+
+        return true;
+    }
 }
+
+

@@ -315,7 +315,7 @@ Light:
   m_Color: {r: 1, g: 0.38188967, b: 0.2584905, a: 1}
   m_Intensity: 1.5
   m_Range: 50
-  m_SpotAngle: 13
+  m_SpotAngle: 25
   m_InnerSpotAngle: 10
   m_CookieSize: 10
   m_Shadows:
@@ -530,7 +530,7 @@ MonoBehaviour:
   layerMask:
     serializedVersion: 2
     m_Bits: 8
-  roadWidth: 0.6
+  roadWidth: 2
 --- !u!4 &692144909
 Transform:
   m_ObjectHideFlags: 0
