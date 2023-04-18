@@ -6,6 +6,7 @@ TagManager:
   tags:
   - Plane
   - Road
+  - Preview
   layers:
   - Default
   - TransparentFX

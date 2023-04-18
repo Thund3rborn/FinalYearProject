@@ -530,7 +530,9 @@ MonoBehaviour:
   layerMask:
     serializedVersion: 2
     m_Bits: 8
+  sphereRadius: 0.5
   roadWidth: 2
+  roadMesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!4 &692144909
 Transform:
   m_ObjectHideFlags: 0

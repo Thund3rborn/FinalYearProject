@@ -29,7 +29,7 @@ public class CreateRoad : MonoBehaviour
     private Vector3 startPoint = Vector3.zero;
     private Vector3 controlPoint = Vector3.zero;
     private Vector3 endPoint = Vector3.zero;
-    private Vector3 keepTrackOfEndPoint= Vector3.zero;
+    private Vector3 keepTrackOfEndPoint = Vector3.zero;
     private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
     int counter = 1;
 
@@ -42,9 +42,9 @@ public class CreateRoad : MonoBehaviour
 
     private Vector3[] roadPoints;
     public float roadWidth = 2f;
-
+    private GameObject roadPreview;
     private MeshFilter meshFilter;
-    private Mesh roadMesh;
+    public Mesh roadMesh;
 
     // Start is called before the first frame update
     void Start()
@@ -55,6 +55,7 @@ public class CreateRoad : MonoBehaviour
         {
             meshFilter = gameObject.AddComponent<MeshFilter>();
         }
+        roadPreview = new GameObject("Road Preview", typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
 
         // Create the road mesh
         //CreateRoadMesh();
@@ -78,7 +79,7 @@ public class CreateRoad : MonoBehaviour
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
         Vector2[] line = new Vector2[sizeOfArr];
-
+        //Mesh roadMesh = new Mesh();
 
         if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
         {
@@ -105,7 +106,7 @@ public class CreateRoad : MonoBehaviour
             for (int i = 0; i < sizeOfArr; i++)
             {
                 double t = i / (double)(sizeOfArr - 1);
-                line[i] = quadratic(new Vector2 (startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
+                line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
             }
 
 
@@ -113,28 +114,188 @@ public class CreateRoad : MonoBehaviour
 
             roadPoints = new Vector3[sizeOfArr];
 
-            for(int i = 0; i < line.Length; i++) 
+            for (int i = 0; i < line.Length; i++)
             {
                 roadPoints[i].x = line[i].x;
                 roadPoints[i].y = SnapPointToTerrainBelow(roadPoints[i]) + 0.05f;
                 roadPoints[i].z = line[i].y;
             }
-            CreateRoadMesh();
+            // CreateRoadMesh();
 
-            startPoint = endPoint; 
-            endPoint = Vector3.zero; 
+            startPoint = endPoint;
+            endPoint = Vector3.zero;
             controlPoint = Vector3.zero;
-        }   
+        }
+        else
+        //update preview
+        {
+            if (startPoint != Vector3.zero && controlPoint == Vector3.zero && endPoint == Vector3.zero && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+            {
+                double distance = GetDistanceBetweenPoints();
+                sizeOfArr = (int)Math.Round(distance) + 1;
+                //sizeOfArr = 10;
 
-        if(Input.GetMouseButtonDown(1))
+                for (int i = 0; i < sizeOfArr; i++)
+                {
+                    double t = i / (double)(sizeOfArr - 1);
+                    line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(raycastHit.point.x, raycastHit.point.z), (float)t);
+                }
+
+                roadPoints = new Vector3[sizeOfArr];
+
+                for (int i = 0; i < line.Length; i++)
+                {
+                    roadPoints[i].x = line[i].x;
+                    roadPoints[i].y = SnapPointToTerrainBelow(roadPoints[i]) + 0.05f;
+                    roadPoints[i].z = line[i].y;
+                }
+
+                PreviewMeshUpdate();
+                //Destroy(GameObject.FindGameObjectWithTag("Preview")); // Destroy the child GameObject
+            }
+            else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+            {
+
+                double distance = GetDistanceBetweenPoints();
+                sizeOfArr = (int)Math.Round(distance) + 1;
+                //sizeOfArr = 10;
+
+                for (int i = 0; i < sizeOfArr; i++)
+                {
+                    double t = i / (double)(sizeOfArr - 1);
+                    line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(raycastHit.point.x, raycastHit.point.z), (float)t);
+                }
+
+                roadPoints = new Vector3[sizeOfArr];
+
+                for (int i = 0; i < line.Length; i++)
+                {
+                    roadPoints[i].x = line[i].x;
+                    roadPoints[i].y = SnapPointToTerrainBelow(roadPoints[i]) + 0.05f;
+                    roadPoints[i].z = line[i].y;
+                }
+
+                PreviewMeshUpdate();
+                //Destroy(GameObject.FindGameObjectWithTag("Preview")); // Destroy the child GameObject
+            }
+            else if (startPoint != Vector3.zero && controlPoint != Vector3.zero && endPoint != Vector3.zero)
+            {
+                GameObject roadSegment = new GameObject("Segment" + counter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+                roadSegment.GetComponent<MeshFilter>().mesh = roadMesh;
+                roadSegment.GetComponent<MeshRenderer>().material = material;
+                roadSegment.tag = "Road";
+                roadSegment.transform.SetParent(gameObject.transform, true);
+                counter++;
+            }
+        }
+
+        if (Input.GetMouseButtonDown(1))
         {
             startPoint = Vector3.zero;
             endPoint = Vector3.zero;
             controlPoint = Vector3.zero;
+            roadMesh.Clear();
         }
     }
 
-    void CreateRoadMesh()
+    void PreviewMeshUpdate()
+    {
+        roadMesh.Clear();
+        // Create a new mesh
+        //roadMesh = new Mesh();
+        roadMesh.name = "Road Mesh";
+
+        // Get the number of points in the road
+        int numPoints = roadPoints.Length;
+
+        // Calculate the number of vertices and triangles needed
+        int numVertices = numPoints * 2;
+        int numTriangles = (numPoints - 1) * 2;
+
+        // Create arrays to hold the vertices, triangles, and UVs
+        Vector3[] vertices = new Vector3[numVertices];
+        int[] triangles = new int[numTriangles * 3];
+        Vector2[] uvs = new Vector2[numVertices];
+
+        // Loop through the points in the road
+        for (int i = 0; i < numPoints; i++)
+        {
+            // Calculate the index of the vertices for this segment
+            int vertexIndex = i * 2;
+
+            // Calculate the position of the vertices for this segment
+            Vector3 segmentDirection = (i < numPoints - 1) ? (roadPoints[i + 1] - roadPoints[i]).normalized : (roadPoints[i] - roadPoints[i - 1]).normalized;
+            Vector3 segmentNormal = Vector3.Cross(segmentDirection, Vector3.up * 2).normalized;
+            Vector3 vertex1 = roadPoints[i] + segmentNormal * roadWidth / 2f;
+            Vector3 vertex2 = roadPoints[i] - segmentNormal * roadWidth / 2f;
+
+            // Add the vertices to the array
+            vertices[vertexIndex] = vertex1;
+            vertices[vertexIndex + 1] = vertex2;
+
+            // Calculate the UVs for the vertices
+            float uvX = (float)i / (float)(numPoints - 1);
+            uvs[vertexIndex] = new Vector2(0, uvX);
+            uvs[vertexIndex + 1] = new Vector2(1, uvX);
+
+            // Add the triangles to the array
+            if (i < numPoints - 1)
+            {
+                int triangleIndex = i * 6;
+                triangles[triangleIndex] = vertexIndex;
+                triangles[triangleIndex + 1] = vertexIndex + 1;
+                triangles[triangleIndex + 2] = vertexIndex + 3;
+                triangles[triangleIndex + 3] = vertexIndex + 3;
+                triangles[triangleIndex + 4] = vertexIndex + 2;
+                triangles[triangleIndex + 5] = vertexIndex;
+            }
+
+        }
+
+        // Set the vertices, triangles, and UVs on the mesh
+        roadMesh.vertices = vertices;
+        roadMesh.triangles = triangles;
+        roadMesh.uv = uvs;
+
+        // Recalculate the normals and bounds of the mesh
+        roadMesh.RecalculateNormals();
+        roadMesh.RecalculateBounds();
+
+        meshFilter.mesh = roadMesh;
+
+
+
+        // If they don't intersect, create a new game object for the new road segment
+        //GameObject roadPreview = new GameObject("Segment" + counter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
+        roadPreview.GetComponent<MeshFilter>().mesh = roadMesh;
+        roadPreview.GetComponent<MeshRenderer>().material = material;
+        roadPreview.tag = "Preview";
+        //roadPreview.transform.SetParent(gameObject.transform, true);
+        //counter++;
+
+        //GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("Road");
+
+        //// Check if vertex is inside mesh2
+        //for (int g = 0; g < objectsWithTag.Length-1; g++)
+        //{
+        //    MeshFilter meshFilter = objectsWithTag[g].GetComponent<MeshFilter>();
+
+        //    // Get the mesh from the MeshFilter component
+        //    Mesh mesh = meshFilter.mesh;
+
+        //    //if (AreMeshesIntersecting(mesh, roadMesh))
+        //    {
+        //        Debug.Log("Intersects!");
+        //        objectsWithTag[g].GetComponent<MeshFilter>().mesh = MergeMeshes(mesh, roadMesh);
+        //        //Destroy(objectsWithTag[g]);
+        //        Destroy(roadSegment);
+        //        break;
+        //    }
+        //}
+
+    }
+
+    void CreateRoadPreviewMesh()
     {
         // Create a new mesh
         roadMesh = new Mesh();
@@ -184,7 +345,7 @@ public class CreateRoad : MonoBehaviour
                 triangles[triangleIndex + 4] = vertexIndex + 2;
                 triangles[triangleIndex + 5] = vertexIndex;
             }
-            
+
         }
 
         // Set the vertices, triangles, and UVs on the mesh
@@ -199,35 +360,12 @@ public class CreateRoad : MonoBehaviour
         meshFilter.mesh = roadMesh;
 
 
-        
+
         // If they don't intersect, create a new game object for the new road segment
         GameObject roadSegment = new GameObject("Segment" + counter, typeof(MeshFilter), typeof(MeshRenderer), typeof(MeshCollider));
         roadSegment.GetComponent<MeshFilter>().mesh = roadMesh;
         roadSegment.GetComponent<MeshRenderer>().material = material;
-        roadSegment.tag = "Road";
-        roadSegment.transform.SetParent(gameObject.transform, true);
-        counter++;
-
-        //GameObject[] objectsWithTag = GameObject.FindGameObjectsWithTag("Road");
-
-        //// Check if vertex is inside mesh2
-        //for (int g = 0; g < objectsWithTag.Length-1; g++)
-        //{
-        //    MeshFilter meshFilter = objectsWithTag[g].GetComponent<MeshFilter>();
-
-        //    // Get the mesh from the MeshFilter component
-        //    Mesh mesh = meshFilter.mesh;
-
-        //    //if (AreMeshesIntersecting(mesh, roadMesh))
-        //    {
-        //        Debug.Log("Intersects!");
-        //        objectsWithTag[g].GetComponent<MeshFilter>().mesh = MergeMeshes(mesh, roadMesh);
-        //        //Destroy(objectsWithTag[g]);
-        //        Destroy(roadSegment);
-        //        break;
-        //    }
-        //}
-
+        roadSegment.tag = "Preview";
     }
 
     // Merge two meshes together
@@ -294,12 +432,12 @@ public class CreateRoad : MonoBehaviour
 
     private void ProcessInput()
     {
-        if(Input.GetKeyDown(KeyCode.Alpha1) && !straightBuildingMode && !curvedBuildingMode) 
+        if (Input.GetKeyDown(KeyCode.Alpha1) && !straightBuildingMode && !curvedBuildingMode)
         {
             Debug.Log("STRAIGHTBuildingMode set to ON");
             straightBuildingMode = true;
         }
-        else if(Input.GetKeyDown(KeyCode.Alpha1) && straightBuildingMode)
+        else if (Input.GetKeyDown(KeyCode.Alpha1) && straightBuildingMode)
         {
             Debug.Log("STRAIGHTBuildingMode set to OFF");
             straightBuildingMode = false;
@@ -309,7 +447,7 @@ public class CreateRoad : MonoBehaviour
             Debug.Log("CURVEDBuildingMode set to ON");
             curvedBuildingMode = true;
         }
-        else if(Input.GetKeyDown(KeyCode.Alpha2) && curvedBuildingMode)
+        else if (Input.GetKeyDown(KeyCode.Alpha2) && curvedBuildingMode)
         {
             Debug.Log("CURVEDBuildingMode set to OFF");
             curvedBuildingMode = false;
