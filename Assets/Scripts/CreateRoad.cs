@@ -26,7 +26,7 @@ public class CreateRoad : MonoBehaviour
     [SerializeField] private LayerMask layerMask;
     [SerializeField] private Button button;
 
-    private bool curvedBuildingMode, straightBuildingMode;
+    public static bool curvedBuildingMode, straightBuildingMode;
 
     private Vector3 startPoint = Vector3.zero;
     private Vector3 controlPoint = Vector3.zero;
@@ -42,6 +42,14 @@ public class CreateRoad : MonoBehaviour
     private GameObject roadPreview;
     private MeshFilter meshFilter;
     public Mesh roadMesh;
+
+
+    //terrain
+    // Reference to the terrain object
+    public Terrain terrain;
+
+    // Reference to the object we want to match
+    //public GameObject objectToMatch;
 
     // Start is called before the first frame update
     void Start()
@@ -76,12 +84,11 @@ public class CreateRoad : MonoBehaviour
         
         //Mesh roadMesh = new Mesh();
 
-        if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
+        if (Input.GetMouseButtonDown(0) && (straightBuildingMode || curvedBuildingMode) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
         {
             if (startPoint == Vector3.zero)
             {
                 startPoint = raycastHit.point;
-                startPoint.y += roadHeightOffset;
             }
             else if (controlPoint == Vector3.zero && !straightBuildingMode)
             {
@@ -90,7 +97,6 @@ public class CreateRoad : MonoBehaviour
             else if (endPoint == Vector3.zero)
             {
                 endPoint = raycastHit.point;
-                endPoint.y += roadHeightOffset;
                 keepTrackOfEndPoint = endPoint;
                 //CreateRoadObject();
             }
@@ -100,7 +106,9 @@ public class CreateRoad : MonoBehaviour
         {
 
             CreateRoadObject();
-           
+            //CreateBridge();
+            //AdjustTerrain();
+
 
             List<Vector3> points = new List<Vector3>();
             points.AddRange(roadPoints);
@@ -111,7 +119,7 @@ public class CreateRoad : MonoBehaviour
             endPoint = Vector3.zero;
             controlPoint = Vector3.zero;
         }
-        else
+        else if (straightBuildingMode || curvedBuildingMode)
         //update preview
         {
             float offsetcopy = roadHeightOffset;
@@ -134,7 +142,7 @@ public class CreateRoad : MonoBehaviour
                 for (int i = 0; i < line.Length; i++)
                 {
                     roadPoints[i].x = line[i].x;
-                    roadPoints[i].y = line[i].y + 0.05f;
+                    roadPoints[i].y = line[i].y + 0.05f + roadHeightOffset;
                     roadPoints[i].z = line[i].z;
                 }
 
@@ -163,12 +171,25 @@ public class CreateRoad : MonoBehaviour
                     line[i] = quadratic(startPoint, controlPoint, raycastHit.point, (float)t);
                 }
 
+                //RaycastHit hit;
+                //if (Physics.Raycast(transform.position, transform.forward, out hit))
+                //{
+                //    if (hit.collider.tag == "Road")
+                //    {
+                //        // Calculate the middle point of the width of the object collided
+                //        Vector3 middlePoint = hit.collider.bounds.center;
+                //        middlePoint.y = transform.position.y;
+
+                //        endPoint = middlePoint;
+                //    }
+                //}
+
                 roadPoints = new Vector3[sizeOfArr];
 
                 for (int i = 0; i < line.Length; i++)
                 {
                     roadPoints[i].x = line[i].x;
-                    roadPoints[i].y = line[i].y + 0.05f;
+                    roadPoints[i].y = line[i].y + 0.05f + roadHeightOffset;
                     roadPoints[i].z = line[i].z;
                 }
 
@@ -253,7 +274,8 @@ public class CreateRoad : MonoBehaviour
         roadSegment.transform.SetParent(gameObject.transform, true);
         counter++;
 
-       RoadManager.roadSegments.Add(roadSegment);
+        RoadManager.roadSegments.Add(roadSegment);
+       //AdjustTerrain();
     }
 
     void PreviewMeshUpdate()
@@ -335,6 +357,106 @@ public class CreateRoad : MonoBehaviour
         endPoint = Vector3.zero;
         controlPoint = Vector3.zero;
         roadMesh.Clear();
+    }
+
+    void CreateBridge()
+    {
+        int numPoints = roadPoints.Length;
+
+        Vector3[] vertices = new Vector3[numPoints * 2];
+        int[] triangles = new int[(numPoints - 1) * 6];
+
+        // Loop through each road point
+        for (int i = 0; i < numPoints; i++)
+        {
+            Vector3 point = roadPoints[i];
+
+            // Determine the height of the terrain at the road point
+            float terrainHeight = Terrain.activeTerrain.SampleHeight(point);
+
+            // Define the vertices of the mesh at the road point
+            vertices[i * 2] = new Vector3(point.x - roadWidth / 2, terrainHeight, point.z);
+            vertices[i * 2 + 1] = new Vector3(point.x + roadWidth / 2, terrainHeight, point.z);
+
+            // Define the vertices of the mesh for the bridge segment at the road point
+            Vector3 bridgeSegmentStart = new Vector3(point.x, terrainHeight - 5, point.z);
+            Vector3 bridgeSegmentEnd = new Vector3(point.x, terrainHeight - 5 - 10, point.z);
+            vertices[(numPoints * 2) + i * 2] = bridgeSegmentStart;
+            vertices[(numPoints * 2) + i * 2 + 1] = bridgeSegmentEnd;
+
+            // Define the triangles of the mesh at the road point
+            if (i > 0)
+            {
+                int triIndex = (i - 1) * 6;
+                int vertIndex = i * 2;
+
+                // Define the triangles of the road mesh
+                triangles[triIndex] = vertIndex - 2;
+                triangles[triIndex + 1] = vertIndex - 1;
+                triangles[triIndex + 2] = vertIndex;
+
+                triangles[triIndex + 3] = vertIndex;
+                triangles[triIndex + 4] = vertIndex - 1;
+                triangles[triIndex + 5] = vertIndex + 1;
+
+                // Define the triangles of the bridge segment mesh
+                int bridgeSegmentVertIndex = (numPoints * 4) + i * 2;
+                triangles[(numPoints - 1) * 6 + triIndex] = bridgeSegmentVertIndex - 2;
+                triangles[(numPoints - 1) * 6 + triIndex + 1] = bridgeSegmentVertIndex - 1;
+                triangles[(numPoints - 1) * 6 + triIndex + 2] = bridgeSegmentVertIndex;
+
+                triangles[(numPoints - 1) * 6 + triIndex + 3] = bridgeSegmentVertIndex;
+                triangles[(numPoints - 1) * 6 + triIndex + 4] = bridgeSegmentVertIndex - 1;
+                triangles[(numPoints - 1) * 6 + triIndex + 5] = bridgeSegmentVertIndex + 1;
+            }
+        }
+
+        // Create the mesh object for the road
+        Mesh mesh = new Mesh();
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+        mesh.RecalculateNormals();
+
+        GameObject bridge = new GameObject("Bridge" + counter);
+        bridge.transform.position = Vector3.zero;
+        bridge.transform.rotation = Quaternion.identity;
+
+        // Create the mesh object for the bridge segment
+        Mesh bridgeMesh = new Mesh();
+        bridgeMesh.vertices = vertices.Skip(numPoints * 2).ToArray();
+        bridgeMesh.triangles = triangles.Skip((numPoints - 1) * 6).ToArray();
+    }
+
+
+    void AdjustTerrain()
+    {
+        // Loop through the array of path points
+        foreach (Vector3 pathPoint in roadPoints)
+        {
+            // Get the terrain data
+            TerrainData terrainData = terrain.terrainData;
+
+            // Get the size of the terrain
+            int heightmapWidth = terrainData.heightmapResolution;
+            int heightmapHeight = terrainData.heightmapResolution;
+
+            // Get the position of the path point in terrain coordinates
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 pathPointInTerrainSpace = pathPoint - terrainPosition;
+
+            // Calculate the position in terrain coordinates as a percentage of the terrain size
+            float terrainX = pathPointInTerrainSpace.x / terrainData.size.x;
+            float terrainZ = pathPointInTerrainSpace.z / terrainData.size.z;
+
+            // Calculate the index of the heightmap array for the desired position
+            int xIndex = Mathf.RoundToInt(terrainX * (heightmapWidth - 1));
+            int zIndex = Mathf.RoundToInt(terrainZ * (heightmapHeight - 1));
+
+            // Set the height at the desired position
+            float[,] heights = terrainData.GetHeights(xIndex, zIndex, 1, 1);
+            heights[0, 0] = pathPoint.y;
+            terrainData.SetHeights(xIndex, zIndex, heights);
+        }
     }
 
     // Merge two meshes together
