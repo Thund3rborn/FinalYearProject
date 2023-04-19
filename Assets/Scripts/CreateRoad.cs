@@ -32,16 +32,11 @@ public class CreateRoad : MonoBehaviour
     private Vector3 controlPoint = Vector3.zero;
     private Vector3 endPoint = Vector3.zero;
     private Vector3 keepTrackOfEndPoint = Vector3.zero;
-    private List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
-    int counter = 1;
-
-    int sizeOfArr;
-    Vector3[] theLine;
-
-    public float sphereRadius = 0.5f;
-
-
-
+    public static List<List<Vector3>> listOfPositionLists = new List<List<Vector3>>();
+    
+    private int counter = 1;
+    private int sizeOfArr = 0;
+    private Vector3[] line;
     private Vector3[] roadPoints;
     public float roadWidth = 2f;
     private GameObject roadPreview;
@@ -61,24 +56,24 @@ public class CreateRoad : MonoBehaviour
 
         // Create the road mesh
         //CreateRoadMesh();
-        sizeOfArr = 0;
     }
 
     // Update is called once per frame
     void Update()
     {
-        CurvedRoad();
+        Road();
 
         ProcessInput();
     }
 
     //create curved road
-    void CurvedRoad()
+    void Road()
     {
         //create a line along which the road will be created
         Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
 
-        Vector2[] line = new Vector2[sizeOfArr];
+
+        
         //Mesh roadMesh = new Mesh();
 
         if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out RaycastHit raycastHit, float.MaxValue, layerMask))
@@ -86,6 +81,7 @@ public class CreateRoad : MonoBehaviour
             if (startPoint == Vector3.zero)
             {
                 startPoint = raycastHit.point;
+                startPoint.y += roadHeightOffset;
             }
             else if (controlPoint == Vector3.zero && !straightBuildingMode)
             {
@@ -94,33 +90,23 @@ public class CreateRoad : MonoBehaviour
             else if (endPoint == Vector3.zero)
             {
                 endPoint = raycastHit.point;
+                endPoint.y += roadHeightOffset;
                 keepTrackOfEndPoint = endPoint;
-                CreateRoadObject();
+                //CreateRoadObject();
             }
         }
-        else if ((startPoint != Vector3.zero && endPoint != Vector3.zero) && (controlPoint != Vector3.zero || straightBuildingMode))
+        else if ((startPoint != Vector3.zero && endPoint != Vector3.zero) 
+            && (controlPoint != Vector3.zero || straightBuildingMode))
         {
-            double distance = GetDistanceBetweenPoints();
-            sizeOfArr = (int)Math.Round(distance) + 1;
 
-            for (int i = 0; i < sizeOfArr; i++)
-            {
-                double t = i / (double)(sizeOfArr - 1);
-                if(straightBuildingMode)
-                    line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
-                else
-                line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(endPoint.x, endPoint.z), (float)t);
-            }
+            CreateRoadObject();
+           
 
-            roadPoints = new Vector3[sizeOfArr];
+            List<Vector3> points = new List<Vector3>();
+            points.AddRange(roadPoints);
+            listOfPositionLists.Add(points);
 
-            for (int i = 0; i < line.Length; i++)
-            {
-                roadPoints[i].x = line[i].x;
-                roadPoints[i].y = SnapPointToTerrainBelow(roadPoints[i]) + 0.05f;
-                roadPoints[i].z = line[i].y;
-            }
-
+            //CreateRoadObject();
             startPoint = endPoint;
             endPoint = Vector3.zero;
             controlPoint = Vector3.zero;
@@ -128,15 +114,19 @@ public class CreateRoad : MonoBehaviour
         else
         //update preview
         {
-            if (startPoint != Vector3.zero && controlPoint == Vector3.zero && endPoint == Vector3.zero && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
+            float offsetcopy = roadHeightOffset;
+            if (startPoint != Vector3.zero && controlPoint == Vector3.zero 
+                && endPoint == Vector3.zero && Physics.Raycast(ray, out raycastHit, float.MaxValue, layerMask))
             {
                 double distance = GetDistanceBetweenPoints();
                 sizeOfArr = (int)Math.Round(distance) + 1;
 
+                line = new Vector3[sizeOfArr];
+
                 for (int i = 0; i < sizeOfArr; i++)
                 {
                     double t = i / (double)(sizeOfArr - 1);
-                    line[i] = linear(new Vector2(startPoint.x, startPoint.z), new Vector2(raycastHit.point.x, raycastHit.point.z), (float)t);
+                    line[i] = linear(startPoint, raycastHit.point, (float)t);
                 }
 
                 roadPoints = new Vector3[sizeOfArr];
@@ -144,9 +134,14 @@ public class CreateRoad : MonoBehaviour
                 for (int i = 0; i < line.Length; i++)
                 {
                     roadPoints[i].x = line[i].x;
-                    roadPoints[i].y = SnapPointToTerrainBelow(roadPoints[i]) + 0.05f;
-                    roadPoints[i].z = line[i].y;
+                    roadPoints[i].y = line[i].y + 0.05f;
+                    roadPoints[i].z = line[i].z;
                 }
+
+                //if(roadHeightOffset != 0)
+                //{
+                //    roadPoints[0].y += roadHeightOffset;
+                //}
 
                 PreviewMeshUpdate();
             }
@@ -156,10 +151,16 @@ public class CreateRoad : MonoBehaviour
                 double distance = GetDistanceBetweenPoints();
                 sizeOfArr = (int)Math.Round(distance) + 1;
 
+                line = new Vector3[sizeOfArr];
+                //if (roadHeightOffset != 0)
+                //{
+                //    startPoint.y += roadHeightOffset;
+                //}
+
                 for (int i = 0; i < sizeOfArr; i++)
                 {
                     double t = i / (double)(sizeOfArr - 1);
-                    line[i] = quadratic(new Vector2(startPoint.x, startPoint.z), new Vector2(controlPoint.x, controlPoint.z), new Vector2(raycastHit.point.x, raycastHit.point.z), (float)t);
+                    line[i] = quadratic(startPoint, controlPoint, raycastHit.point, (float)t);
                 }
 
                 roadPoints = new Vector3[sizeOfArr];
@@ -167,9 +168,14 @@ public class CreateRoad : MonoBehaviour
                 for (int i = 0; i < line.Length; i++)
                 {
                     roadPoints[i].x = line[i].x;
-                    roadPoints[i].y = SnapPointToTerrainBelow(roadPoints[i]) + 0.05f;
-                    roadPoints[i].z = line[i].y;
+                    roadPoints[i].y = line[i].y + 0.05f;
+                    roadPoints[i].z = line[i].z;
                 }
+
+                //if (roadHeightOffset != offsetcopy)
+                //{
+                //    roadPoints[line.Length].y += roadHeightOffset;
+                //}
 
                 PreviewMeshUpdate();
             }
@@ -177,7 +183,7 @@ public class CreateRoad : MonoBehaviour
 
         if (Input.GetMouseButtonDown(1))
         {
-            ResetRoadMesh();
+            ResetRoadPreviewMesh();
         }
     }
 
@@ -246,6 +252,8 @@ public class CreateRoad : MonoBehaviour
         roadSegment.tag = "Road";
         roadSegment.transform.SetParent(gameObject.transform, true);
         counter++;
+
+       RoadManager.roadSegments.Add(roadSegment);
     }
 
     void PreviewMeshUpdate()
@@ -321,7 +329,7 @@ public class CreateRoad : MonoBehaviour
         roadPreview.tag = "Preview";
     }
 
-    void ResetRoadMesh()
+    void ResetRoadPreviewMesh()
     {
         startPoint = Vector3.zero;
         endPoint = Vector3.zero;
@@ -395,26 +403,26 @@ public class CreateRoad : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Alpha1) && !straightBuildingMode && !curvedBuildingMode)
         {
-            ResetRoadMesh();
+            ResetRoadPreviewMesh();
             Debug.Log("STRAIGHTBuildingMode set to ON");
             straightBuildingMode = true;
 
         }
         else if (Input.GetKeyDown(KeyCode.Alpha1) && straightBuildingMode)
         {
-            ResetRoadMesh();
+            ResetRoadPreviewMesh();
             Debug.Log("STRAIGHTBuildingMode set to OFF");
             straightBuildingMode = false;
         }
         if (Input.GetKeyDown(KeyCode.Alpha2) && !curvedBuildingMode && !straightBuildingMode)
         {
-            ResetRoadMesh();
+            ResetRoadPreviewMesh();
             Debug.Log("CURVEDBuildingMode set to ON");
             curvedBuildingMode = true;
         }
         else if (Input.GetKeyDown(KeyCode.Alpha2) && curvedBuildingMode)
         {
-            ResetRoadMesh();
+            ResetRoadPreviewMesh();
             Debug.Log("CURVEDBuildingMode set to OFF");
             curvedBuildingMode = false;
         }
@@ -431,25 +439,27 @@ public class CreateRoad : MonoBehaviour
         }
     }
 
-    private float lerp(float a, float b, float t)
+    private static float lerp(float a, float b, float t)
     {
         return a + (b - a) * t;
     }
 
-    private Vector2 linear(Vector2 a, Vector2 b, float t)
+    private static Vector3 linear(Vector3 a, Vector3 b, float t)
     {
-        return new Vector2(lerp(a.x, b.x, t), lerp(a.y, b.y, t));
+        return new Vector3(lerp(a.x, b.x, t), lerp(a.y, b.y, t), lerp(a.z, b.z, t));
     }
 
-    private Vector2 quadratic(Vector2 a, Vector2 b, Vector2 c, float t)
+    private static Vector3 quadratic(Vector3 a, Vector3 b, Vector3 c, float t)
     {
-        Vector2 one, two;
+        Vector3 one, two;
         one.x = lerp(a.x, b.x, t);
         one.y = lerp(a.y, b.y, t);
+        one.z = lerp(a.z, b.z, t);
         two.x = lerp(b.x, c.x, t);
         two.y = lerp(b.y, c.y, t);
+        two.z = lerp(b.z, c.z, t);
 
-        return new Vector2(lerp(one.x, two.x, t), lerp(one.y, two.y, t));
+        return new Vector3(lerp(one.x, two.x, t), lerp(one.y, two.y, t), lerp(one.z, two.z, t));
     }
 
     float SnapPointToTerrainBelow(Vector3 point)
