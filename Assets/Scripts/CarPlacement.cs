@@ -13,24 +13,24 @@ public class CarPlacement : MonoBehaviour
 
     public void PlaceCar()
     {
-        // Check if the user has pressed the button to enable car placement mode
+        //check if the user has pressed the button to enable car placement mode
         if (Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(0))
         {
             isPlacingCar = !isPlacingCar;
             if (isPlacingCar)
             {
-                // Instantiate the car prefab and set its position to the cursor position
+                //instantiate the car prefab and set its position to the cursor position
                 currentCar = Instantiate(carPrefab);
                 currentCar.transform.position = GetTerrainCursorPosition();
             }
             else
             {
-                // Destroy the car prefab when placement mode is turned off
+                //destroy the car prefab when placement mode is turned off
                 Destroy(currentCar);
             }
         }
 
-        // If the user is currently placing a car, update its position to follow the cursor
+        //if the user is currently placing a car, update its position to follow the cursor
         if (isPlacingCar)
         {
             currentCar.transform.position = GetTerrainCursorPosition() + Vector3.up * levitationHeight;
@@ -44,7 +44,7 @@ public class CarPlacement : MonoBehaviour
         }
     }
 
-    // Helper method to get the cursor position on the terrain
+    //helper method to get the cursor position on the terrain
     private Vector3 GetTerrainCursorPosition()
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
