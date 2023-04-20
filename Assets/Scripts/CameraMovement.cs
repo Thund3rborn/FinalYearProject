@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static UnityEditor.PlayerSettings;
 
 public class CameraMovement : MonoBehaviour
 {
@@ -11,6 +10,7 @@ public class CameraMovement : MonoBehaviour
     [SerializeField] private float cameraSpeed = 15f;
     private float cameraVelocityX;
     private float cameraVelocityY;
+    private const float DRAG = 0.87f;
 
     // Start is called before the first frame update
     void Start()
@@ -26,11 +26,10 @@ public class CameraMovement : MonoBehaviour
 
         if(cameraVelocityX != 0 || cameraVelocityY != 0)
         {
-            cameraVelocityX *= 0.87f;   //for smooth movement
-            cameraVelocityY *= 0.87f;
+            cameraVelocityX *= DRAG;   //for smooth movement
+            cameraVelocityY *= DRAG;
         }
 
-        //cameraVelocityX = 0; cameraVelocityY = 0;
         if (Input.GetKey(KeyCode.W))
         {
             cameraVelocityX = cameraSpeed;

@@ -20,27 +20,27 @@ public class RoadManager : MonoBehaviour
             List<Vector3> currentList = listOfPositions[i];
             List<Vector3> nextList = listOfPositions[i + 1];
 
-            // Check if either list is empty or has only one element
+            //check if either list is empty or has only one element
             if (currentList.Count == 0 || currentList.Count == 1 || nextList.Count == 0 || nextList.Count == 1)
             {
-                continue; // Skip to the next pair of lists
+                continue; //skip to the next pair of lists
             }
 
             if (currentList[currentList.Count - 1] == nextList[0])
             {
-                // The last value in the current list and the first value in the next list are the same
-                // Connect them together
+                //the last value in the current list and the first value in the next list are the same
+                //connect them together
 
-                // Remove the duplicate point
+                //remove the duplicate point
                 nextList.RemoveAt(0);
 
-                // Combine the two lists
+                //combine the two lists
                 currentList.AddRange(nextList);
 
-                // Remove the old nextList from listOfPositions
+                //remove the old nextList from listOfPositions
                 listOfPositions.RemoveAt(i + 1);
 
-                // Decrement i so that we don't skip the next list
+                //decrement i so that we don't skip the next list
                 i--;
             }
         }

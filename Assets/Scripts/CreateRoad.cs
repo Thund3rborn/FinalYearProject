@@ -1,17 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using System.Linq;
-using System.Net;
-using System.Security.Cryptography;
-using Unity.VisualScripting;
 using UnityEditor;
-using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 using UnityEngine.UIElements;
-using UnityEngine.XR;
-using static UnityEditor.Experimental.AssetDatabaseExperimental.AssetDatabaseCounters;
 
 public class CreateRoad : MonoBehaviour
 {
@@ -160,29 +152,12 @@ public class CreateRoad : MonoBehaviour
                 sizeOfArr = (int)Math.Round(distance) + 1;
 
                 line = new Vector3[sizeOfArr];
-                //if (roadHeightOffset != 0)
-                //{
-                //    startPoint.y += roadHeightOffset;
-                //}
 
                 for (int i = 0; i < sizeOfArr; i++)
                 {
                     double t = i / (double)(sizeOfArr - 1);
                     line[i] = quadratic(startPoint, controlPoint, raycastHit.point, (float)t);
                 }
-
-                //RaycastHit hit;
-                //if (Physics.Raycast(transform.position, transform.forward, out hit))
-                //{
-                //    if (hit.collider.tag == "Road")
-                //    {
-                //        // Calculate the middle point of the width of the object collided
-                //        Vector3 middlePoint = hit.collider.bounds.center;
-                //        middlePoint.y = transform.position.y;
-
-                //        endPoint = middlePoint;
-                //    }
-                //}
 
                 roadPoints = new Vector3[sizeOfArr];
 
@@ -192,11 +167,6 @@ public class CreateRoad : MonoBehaviour
                     roadPoints[i].y = line[i].y + 0.05f + roadHeightOffset;
                     roadPoints[i].z = line[i].z;
                 }
-
-                //if (roadHeightOffset != offsetcopy)
-                //{
-                //    roadPoints[line.Length].y += roadHeightOffset;
-                //}
 
                 PreviewMeshUpdate();
             }
